@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import { checkDatabaseHealth, type DatabaseHealth } from '@repo/db';
 import { resourceRepository } from './repositories/resource.repository.js';
 import { createResourceRouter } from './routes/resource.routes.js';
+import { createMemoryRouter } from './routes/memory.routes.js';
+import { memoryRepository } from './repositories/memory.repository.js';
+import { ResourceMemoryBuilder } from './services/memory-builder.service.js';
 import {
   DefaultResourceService,
   type ResourceService,
@@ -14,6 +17,7 @@ export type HealthCheck = () => Promise<DatabaseHealth>;
 export type AppDependencies = {
   healthCheck?: HealthCheck;
   resourceService?: ResourceService;
+  memoryBuilder?: ResourceMemoryBuilder;
 };
 
 export function createApp(healthCheck?: HealthCheck): Express;
@@ -25,6 +29,7 @@ export function createApp(
   const {
     healthCheck = checkDatabaseHealth,
     resourceService = new DefaultResourceService(resourceRepository),
+    memoryBuilder = new ResourceMemoryBuilder(resourceService, memoryRepository),
   } = dependencies;
   const app = express();
 
@@ -33,6 +38,7 @@ export function createApp(
   app.use(express.json());
 
   app.use('/api/resources', createResourceRouter(resourceService));
+  app.use('/api/memories', createMemoryRouter(memoryBuilder));
 
   app.get('/api/health', async (_request: Request, response: Response) => {
     try {

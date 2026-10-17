@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'71bdee96ea37e2776888675cfb70891e6b162da65c67620dfcc4d39461640884'>;
+  StorageHashBase<'7779c20909cdd156723430544e0579482da247fc0ddfa9e24c0ef01ed9432083'>;
 export type ExecutionHash =
   ExecutionHashBase<'8ed06762834705b6774630728c4fa54af60421fe2e1df568f257fb3172ab0561'>;
 export type ProfileHash =
@@ -294,6 +294,7 @@ export type FieldOutputTypes = {
       readonly targetMemoryId: CodecTypes['pg/text@1']['output'];
     };
     readonly MemoryItem: {
+      readonly chunkIndex: CodecTypes['pg/int4@1']['output'] | null;
       readonly content: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly embedding: Vector<1536> | null;
@@ -379,6 +380,7 @@ export type FieldInputTypes = {
       readonly targetMemoryId: CodecTypes['pg/text@1']['input'];
     };
     readonly MemoryItem: {
+      readonly chunkIndex: CodecTypes['pg/int4@1']['input'] | null;
       readonly content: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly embedding: CodecTypes['pg/vector@1']['input'] | null;
@@ -464,6 +466,7 @@ export type StorageColumnTypes = {
       readonly targetMemoryId: CodecTypes['pg/text@1']['output'];
     };
     readonly memory_items: {
+      readonly chunkIndex: CodecTypes['pg/int4@1']['output'] | null;
       readonly content: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly embedding: Vector<1536> | null;
@@ -549,6 +552,7 @@ export type StorageColumnInputTypes = {
       readonly targetMemoryId: CodecTypes['pg/text@1']['input'];
     };
     readonly memory_items: {
+      readonly chunkIndex: CodecTypes['pg/int4@1']['input'] | null;
       readonly content: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly embedding: CodecTypes['pg/vector@1']['input'] | null;
@@ -649,6 +653,7 @@ export namespace Models {
     readonly [RelationKeys]?: 'sourceMemory' | 'targetMemory';
   };
   export type public_MemoryItem = {
+    chunkIndex: CodecTypes['pg/int4@1']['output'] | null;
     content: CodecTypes['pg/text@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     embedding: Vector<1536> | null;
@@ -1168,6 +1173,12 @@ type ContractBase = Omit<
             };
             readonly memory_items: {
               columns: {
+                readonly chunkIndex: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly content: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
@@ -1262,7 +1273,9 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [
+                { readonly columns: readonly ['resourceId', 'representation', 'chunkIndex'] },
+              ];
               indexes: readonly [
                 {
                   readonly name: 'memory_items_representation_idx_26308a09';
@@ -1861,6 +1874,10 @@ type ContractBase = Omit<
           };
           readonly MemoryItem: {
             readonly fields: {
+              readonly chunkIndex: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly content: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1983,6 +2000,7 @@ type ContractBase = Omit<
               readonly table: 'memory_items';
               readonly namespaceId: 'public';
               readonly fields: {
+                readonly chunkIndex: { readonly column: 'chunkIndex' };
                 readonly content: { readonly column: 'content' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly embedding: { readonly column: 'embedding' };

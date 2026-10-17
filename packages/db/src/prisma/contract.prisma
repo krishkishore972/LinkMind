@@ -89,6 +89,7 @@ model MemoryItem {
   id                  String              @id @default(uuid())
   resourceId          String
   representation      MemoryRepresentation
+  chunkIndex          Int?
   content             String
   evidenceText        String?
   evidenceStart       Int?
@@ -110,6 +111,7 @@ model MemoryItem {
   @@index([resourceId])
   @@index([representation])
   @@index([resourceId, representation])
+  @@unique([resourceId, representation, chunkIndex])
   @@map("memory_items")
 }
 
