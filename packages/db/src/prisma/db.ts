@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import postgres from '@prisma/orm-postgres/runtime';
 import pgvector from '@prisma/orm-extension-pgvector/runtime';
-import type { Contract } from './contract.d';
+import type { Contract } from './contract.d.ts';
 import contractJson from './contract.json' with { type: 'json' };
 
 export const db = postgres<Contract>({
