@@ -7,6 +7,12 @@ import { createResourceRouter } from './routes/resource.routes.js';
 import { createMemoryRouter } from './routes/memory.routes.js';
 import { memoryRepository } from './repositories/memory.repository.js';
 import { ResourceMemoryBuilder } from './services/memory-builder.service.js';
+import { createQueryRouter } from './routes/query.routes.js';
+import { memorySearchRepository } from './repositories/memory-search.repository.js';
+import {
+  Bm25RetrievalService,
+  type RetrievalService,
+} from './services/retrieval.service.js';
 import {
   DefaultResourceService,
   type ResourceService,
@@ -18,6 +24,7 @@ export type AppDependencies = {
   healthCheck?: HealthCheck;
   resourceService?: ResourceService;
   memoryBuilder?: ResourceMemoryBuilder;
+  retrievalService?: RetrievalService;
 };
 
 export function createApp(healthCheck?: HealthCheck): Express;
@@ -30,6 +37,7 @@ export function createApp(
     healthCheck = checkDatabaseHealth,
     resourceService = new DefaultResourceService(resourceRepository),
     memoryBuilder = new ResourceMemoryBuilder(resourceService, memoryRepository),
+    retrievalService = new Bm25RetrievalService(memorySearchRepository),
   } = dependencies;
   const app = express();
 
@@ -39,6 +47,7 @@ export function createApp(
 
   app.use('/api/resources', createResourceRouter(resourceService));
   app.use('/api/memories', createMemoryRouter(memoryBuilder));
+  app.use('/api/query', createQueryRouter(retrievalService));
 
   app.get('/api/health', async (_request: Request, response: Response) => {
     try {
