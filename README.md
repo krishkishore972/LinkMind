@@ -101,12 +101,12 @@ flowchart TD
 
 ## Memory representations
 
-| Representation | Stored content | Retrieval configuration |
-|---|---|---|
-| **Raw-content memory** | Source text split into chunks, with resource and evidence metadata | BM25 and dense vector search |
-| **Summary-based memory** | Concise summary linked to its source resource | Dense vector search over summaries |
-| **Structured-fact memory** | Atomic facts and entities linked to supporting source passages | Dense vector search over facts |
-| **Graph-linked memory** | Structured fact nodes connected by explicit, typed edges | Vector search over facts followed by bounded graph expansion |
+| Representation             | Stored content                                                     | Retrieval configuration                                      |
+| -------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Raw-content memory**     | Source text split into chunks, with resource and evidence metadata | BM25 and dense vector search                                 |
+| **Summary-based memory**   | Concise summary linked to its source resource                      | Dense vector search over summaries                           |
+| **Structured-fact memory** | Atomic facts and entities linked to supporting source passages     | Dense vector search over facts                               |
+| **Graph-linked memory**    | Structured fact nodes connected by explicit, typed edges           | Vector search over facts followed by bounded graph expansion |
 
 Use reviewed summaries, facts, and graph edges for the initial demo dataset so the expected evidence is known. For newly submitted resources, any automatically generated summaries/facts/edges are candidates until checked. Distinguish source text from generated abstractions in the data model and UI.
 
@@ -118,13 +118,13 @@ Start with pasted or pre-extracted text. Use a simple deterministic chunker, ini
 
 The initial pilot compares five configurations:
 
-| ID | Configuration | Research purpose |
-|---|---|---|
-| **E1** | BM25 over raw-content chunks | Lexical retrieval baseline |
+| ID     | Configuration                                    | Research purpose                                                  |
+| ------ | ------------------------------------------------ | ----------------------------------------------------------------- |
+| **E1** | BM25 over raw-content chunks                     | Lexical retrieval baseline                                        |
 | **E2** | pgvector semantic search over raw-content chunks | Compare dense retrieval with E1 on the same source representation |
-| **E3** | pgvector semantic search over summaries | Test the effect of summary-based memory |
-| **E4** | pgvector semantic search over structured facts | Test atomic fact representation |
-| **E5** | Vector search over facts plus graph expansion | Test whether explicit relationships help retrieval |
+| **E3** | pgvector semantic search over summaries          | Test the effect of summary-based memory                           |
+| **E4** | pgvector semantic search over structured facts   | Test atomic fact representation                                   |
+| **E5** | Vector search over facts plus graph expansion    | Test whether explicit relationships help retrieval                |
 
 Use the same dataset and questions throughout. Keep the embedding model, text preprocessing, and retrieval budget consistent across E2–E5. E1 vs E2 changes the retrieval method; E2–E5 primarily investigate representation/graph strategy. Explain this distinction when interpreting results.
 
@@ -132,20 +132,20 @@ For graph expansion, start from a fixed number of vector-search candidates, foll
 
 ## Technology stack
 
-| Layer | Technology | Responsibility |
-|---|---|---|
-| Frontend | React, Vite, TypeScript | Resource library, query comparison, evaluation dashboard |
-| Backend | Node.js, Express, TypeScript | REST API and application services |
-| ORM | Prisma ORM | Relational models, CRUD operations, migrations |
-| Database | PostgreSQL | Resources, memories, graph edges, questions, and results |
-| Vector search | pgvector | Store embeddings and perform similarity search |
-| Lexical search | BM25 implemented in TypeScript | Transparent retrieval baseline |
-| Embeddings | Gemini embedding provider behind an interface | Embed documents and questions; provider can be replaced later |
-| Optional generation | Gemini via an LLM-provider interface | Optional summary/fact generation and evidence-based answers |
-| Validation | Zod | Validate incoming request data |
-| Tests | Vitest | Unit and integration tests |
-| Local database | Docker Compose | Reproducible PostgreSQL/pgvector environment |
-| Export | CSV | Question-level experiment observations |
+| Layer               | Technology                                    | Responsibility                                                |
+| ------------------- | --------------------------------------------- | ------------------------------------------------------------- |
+| Frontend            | Next.js, React, TypeScript                    | Resource library, query comparison, evaluation dashboard      |
+| Backend             | Node.js, Express, TypeScript                  | REST API and application services                             |
+| ORM                 | Prisma ORM                                    | Relational models, CRUD operations, migrations                |
+| Database            | PostgreSQL                                    | Resources, memories, graph edges, questions, and results      |
+| Vector search       | pgvector                                      | Store embeddings and perform similarity search                |
+| Lexical search      | BM25 implemented in TypeScript                | Transparent retrieval baseline                                |
+| Embeddings          | Gemini embedding provider behind an interface | Embed documents and questions; provider can be replaced later |
+| Optional generation | Gemini via an LLM-provider interface          | Optional summary/fact generation and evidence-based answers   |
+| Validation          | Zod                                           | Validate incoming request data                                |
+| Tests               | Vitest                                        | Unit and integration tests                                    |
+| Local database      | Docker Compose                                | Reproducible PostgreSQL/pgvector environment                  |
+| Export              | CSV                                           | Question-level experiment observations                        |
 
 ### Prisma and pgvector integration
 
@@ -161,15 +161,15 @@ Keep model name and vector dimension in configuration, not scattered constants. 
 
 The intended relational model consists of these entities:
 
-| Model/table | Purpose | Key requirements |
-|---|---|---|
-| `Resource` | Original source and metadata | Stable ID, type, title, optional URL, original content, creation timestamp |
-| `MemoryItem` | Raw chunks, summaries, and fact nodes | Resource link, representation, content, evidence text/span, optional entities, optional embedding, provenance/status |
-| `MemoryEdge` | Relations between fact nodes | Source fact, target fact, relation type, optional shared entity, provenance/confidence if inferred |
-| `EvaluationQuestion` | Fixed test questions | Category, expected answer when answerable, answerability label |
-| `ExpectedEvidence` | Gold sources/passages | Question link, expected resource ID, relevant passage or span |
-| `ExperimentRun` | One full evaluation run | Timestamp, dataset version, app/retrieval config, embedding model/config |
-| `ExperimentResult` | Per-question/configuration observations | Run/question links, configuration, relevant ranks, metrics, latency, returned IDs |
+| Model/table          | Purpose                                 | Key requirements                                                                                                     |
+| -------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `Resource`           | Original source and metadata            | Stable ID, type, title, optional URL, original content, creation timestamp                                           |
+| `MemoryItem`         | Raw chunks, summaries, and fact nodes   | Resource link, representation, content, evidence text/span, optional entities, optional embedding, provenance/status |
+| `MemoryEdge`         | Relations between fact nodes            | Source fact, target fact, relation type, optional shared entity, provenance/confidence if inferred                   |
+| `EvaluationQuestion` | Fixed test questions                    | Category, expected answer when answerable, answerability label                                                       |
+| `ExpectedEvidence`   | Gold sources/passages                   | Question link, expected resource ID, relevant passage or span                                                        |
+| `ExperimentRun`      | One full evaluation run                 | Timestamp, dataset version, app/retrieval config, embedding model/config                                             |
+| `ExperimentResult`   | Per-question/configuration observations | Run/question links, configuration, relevant ranks, metrics, latency, returned IDs                                    |
 
 The exact Prisma model names can follow existing repository conventions. Use foreign keys, unique constraints, and indexes for common filters. Store vectors in pgvector and use the selected version's supported access pattern. Never interpolate user-controlled SQL fragments into raw queries; use parameterized queries or the extension's typed API.
 
@@ -230,10 +230,11 @@ These steps describe the intended setup. Adapt commands to the scripts and files
 
 ### Prerequisites
 
-- Node.js compatible with the installed Vite and backend dependencies
+- Node.js compatible with the installed Next.js and backend dependencies
 - npm
 - Docker Engine and Docker Compose
 - Git
+- pnpm (or Corepack, which can enable the pinned pnpm version)
 - A Gemini API key only for API-backed embedding or optional generation features
 
 ### 1. Clone the project
@@ -283,7 +284,7 @@ Create the env file at the location expected by the backend and use `.env.exampl
 ```env
 DATABASE_URL="postgresql://linkmind:linkmind_local_dev@localhost:5432/linkmind?schema=public"
 PORT=4000
-FRONTEND_ORIGIN="http://localhost:5173"
+FRONTEND_ORIGIN="http://localhost:3000"
 GEMINI_API_KEY=""
 EMBEDDING_MODEL="<configured-model>"
 EMBEDDING_DIMENSIONS="<configured-dimensions>"
@@ -306,29 +307,29 @@ npm run dev
 In another terminal:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+cd apps/web
+pnpm install
+pnpm dev
 ```
 
-Expected development ports are `http://localhost:5173` for the frontend and `http://localhost:4000` for the backend unless the project configuration says otherwise. Add a health endpoint and verify the pgvector extension early in development.
+Expected development ports are `http://localhost:3000` for the frontend and `http://localhost:4000` for the backend unless the project configuration says otherwise. Add a health endpoint and verify the pgvector extension early in development.
 
 ## Planned API
 
 These are planned endpoint contracts, not proof that the routes are implemented. Match actual handlers and validation schemas to the contract as features are added.
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/api/health` | Check API/database readiness as implemented |
-| `POST` | `/api/demo/seed` | Load the synthetic demonstration dataset idempotently |
-| `GET` | `/api/resources` | List resources |
-| `POST` | `/api/resources` | Add resource text and metadata |
-| `GET` | `/api/resources/:id` | Retrieve one resource and its memory items |
-| `POST` | `/api/memories/rebuild` | Build representations and embeddings for selected resources |
-| `POST` | `/api/query/compare` | Search all comparison configurations for one question |
-| `POST` | `/api/evaluation/run` | Run the fixed evaluation set |
-| `GET` | `/api/evaluation/runs/:id` | Retrieve metrics and question-level results |
-| `GET` | `/api/evaluation/runs/:id.csv` | Export question-level results as CSV |
+| Method | Endpoint                       | Purpose                                                     |
+| ------ | ------------------------------ | ----------------------------------------------------------- |
+| `GET`  | `/api/health`                  | Check API/database readiness as implemented                 |
+| `POST` | `/api/demo/seed`               | Load the synthetic demonstration dataset idempotently       |
+| `GET`  | `/api/resources`               | List resources                                              |
+| `POST` | `/api/resources`               | Add resource text and metadata                              |
+| `GET`  | `/api/resources/:id`           | Retrieve one resource and its memory items                  |
+| `POST` | `/api/memories/rebuild`        | Build representations and embeddings for selected resources |
+| `POST` | `/api/query/compare`           | Search all comparison configurations for one question       |
+| `POST` | `/api/evaluation/run`          | Run the fixed evaluation set                                |
+| `GET`  | `/api/evaluation/runs/:id`     | Retrieve metrics and question-level results                 |
+| `GET`  | `/api/evaluation/runs/:id.csv` | Export question-level results as CSV                        |
 
 Query results should include the configuration, memory ID, resource ID/title, text, supporting evidence, rank/score, and retrieval latency. Keep generated answers separate from retrieval metadata so generation quality does not get confused with retrieval quality.
 
@@ -348,13 +349,13 @@ For every answerable question, define its expected answer and one or more suppor
 
 ### Metrics
 
-| Metric | Definition |
-|---|---|
-| **Recall@3** | Fraction of expected relevant resources retrieved within the top three. With multiple gold resources, count the fraction found in the top three. |
-| **MRR** | Mean reciprocal rank of the first relevant result; zero when no relevant result is retrieved. |
-| **Evidence correctness** | Whether retrieved evidence actually supports the answer; manually audit the pilot. |
-| **Retrieval latency** | Elapsed retrieval time measured consistently on the same machine, excluding embedding API calls unless explicitly stated. |
-| **Abstention behaviour** | Whether the system avoids asserting an unsupported answer when evidence is absent. |
+| Metric                   | Definition                                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Recall@3**             | Fraction of expected relevant resources retrieved within the top three. With multiple gold resources, count the fraction found in the top three. |
+| **MRR**                  | Mean reciprocal rank of the first relevant result; zero when no relevant result is retrieved.                                                    |
+| **Evidence correctness** | Whether retrieved evidence actually supports the answer; manually audit the pilot.                                                               |
+| **Retrieval latency**    | Elapsed retrieval time measured consistently on the same machine, excluding embedding API calls unless explicitly stated.                        |
+| **Abstention behaviour** | Whether the system avoids asserting an unsupported answer when evidence is absent.                                                               |
 
 Record question ID, configuration, expected evidence, retrieved resource IDs, first relevant rank, metric values, latency, and relevant configuration metadata. Report actual measurements only. Do not invent numbers or describe hypotheses as findings. State whether embedding API latency is included or excluded and use the same convention for all configurations.
 
@@ -362,10 +363,10 @@ Record question ID, configuration, expected evidence, retrieved resource IDs, fi
 
 Suggested division for a three-person team:
 
-| Owner | Primary responsibilities |
-|---|---|
-| **Backend / technical lead** | Architecture, Prisma models/migrations, pgvector integration, vector repository, retrieval API, and code integration |
-| **Frontend owner** | Resource library, query comparison screen, evaluation dashboard, and API integration |
+| Owner                          | Primary responsibilities                                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **Backend / technical lead**   | Architecture, Prisma models/migrations, pgvector integration, vector repository, retrieval API, and code integration      |
+| **Frontend owner**             | Resource library, query comparison screen, evaluation dashboard, and API integration                                      |
 | **Dataset / evaluation owner** | Curated synthetic resources, expected answers/evidence, test runner integration, metric review, CSV, and demo preparation |
 
 All members should test the integrated workflow. Agree on shared TypeScript types, database fields, and API response shapes before implementing components in parallel.
@@ -400,7 +401,7 @@ All members should test the integrated workflow. Agree on shared TypeScript type
 - [Prisma — Using extensions](https://www.prisma.io/docs/orm/extensions/using-extensions)
 - [pgvector — project and query operators](https://github.com/pgvector/pgvector)
 - [Gemini embeddings documentation](https://ai.google.dev/gemini-api/docs/embeddings)
-- [Vite documentation](https://vite.dev/guide/)
+- [Next.js documentation](https://nextjs.org/docs)
 - [Vitest documentation](https://vitest.dev/guide/)
 
 ---

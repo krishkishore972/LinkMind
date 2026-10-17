@@ -1,6 +1,6 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f8fa;
+  --foreground: #17202d;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,6 +14,7 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  background: var(--background);
 }
 
 body {
@@ -32,19 +33,115 @@ a {
   text-decoration: none;
 }
 
-.imgDark {
-  display: none;
+.stateCard {
+  border: 1px solid #e2e7eb;
+  border-radius: 9px;
+  background: #fff;
+  color: #7b8795;
+  font-size: 13px;
+  padding: 24px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+.stateError {
+  color: #9b5d66;
+  background: #fff7f8;
+  border-color: #efd9dd;
+}
 
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.detailModal {
+  max-width: 720px;
+}
+
+.detailMeta,
+.memoryItemTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detailMeta {
+  color: #7b8795;
+  font-size: 11px;
+  margin: -8px 0 22px;
+}
+
+.detailLabel {
+  color: #87919e;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.detailSource {
+  border-bottom: 1px solid #edf0f2;
+  padding-bottom: 20px;
+}
+
+.detailSource p {
+  color: #65717f;
+  font-size: 13px;
+  line-height: 1.7;
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+}
+
+.memoryList {
+  display: grid;
+  gap: 10px;
+  padding-top: 20px;
+}
+
+.memoryItem {
+  border: 1px solid #e5e9ed;
+  border-radius: 7px;
+  padding: 13px;
+}
+
+.memoryItem p {
+  color: #667482;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 10px 0 7px;
+}
+
+.memoryItem small {
+  color: #9aa4ae;
+  font-size: 10px;
+}
+
+.reviewedLabel,
+.generatedLabel {
+  font-size: 10px;
+  margin-left: auto;
+}
+
+.reviewedLabel {
+  color: #5f9a82;
+}
+.generatedLabel {
+  color: #ad8552;
+}
+.formError {
+  color: #9b5d66;
+  background: #fff7f8;
+  border: 1px solid #efd9dd;
+  border-radius: 5px;
+  font-size: 11px;
+  padding: 9px 10px;
+}
+.retryButton {
+  border: 1px solid #d9b7bd;
+  border-radius: 5px;
+  background: #fff;
+  color: #9b5d66;
+  cursor: pointer;
+  font: 11px var(--font-geist-sans);
+  margin-left: 8px;
+  padding: 5px 8px;
 }
