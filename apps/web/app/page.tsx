@@ -9,8 +9,10 @@ import {
   resourceTypes,
   type CreateResourceInput,
   type EvaluationSnapshot,
+  type MemoryItem,
   type Resource,
   type ResourceDetail,
+  type ResourceId,
   type ResourceType,
   type RetrievalConfiguration,
   type RetrievalResult,
@@ -345,14 +347,32 @@ function ResourceDetailModal({
   error,
   close,
   retry,
+  rebuild,
 }: {
   detail: ResourceDetail | null;
   loading: boolean;
   error: string;
   close: () => void;
   retry: () => void;
+  rebuild: (resourceId: ResourceId) => Promise<MemoryItem[]>;
 }) {
   const dialogRef = useDialogFocus(true, close);
+  const [rebuilding, setRebuilding] = useState(false);
+  const [rebuildError, setRebuildError] = useState("");
+  const rebuildResource = async () => {
+    if (!detail || rebuilding) return;
+    setRebuilding(true);
+    setRebuildError("");
+    try {
+      await rebuild(detail.id);
+    } catch (cause) {
+      setRebuildError(
+        cause instanceof Error ? cause.message : "Could not rebuild memory.",
+      );
+    } finally {
+      setRebuilding(false);
+    }
+  };
   return (
     <div
       className={styles.modalBackdrop}
@@ -405,7 +425,26 @@ function ResourceDetailModal({
               <p>{detail.content}</p>
             </div>
             <div className="memoryList">
-              <div className="detailLabel">Memory items</div>
+              <div className="memoryListHeader">
+                <span className="detailLabel">Memory items</span>
+                <button
+                  className="retryButton"
+                  onClick={() => void rebuildResource()}
+                  disabled={rebuilding}
+                >
+                  {rebuilding ? "Rebuilding..." : "Rebuild raw memory"}
+                </button>
+              </div>
+              {rebuildError && (
+                <div className="formError" role="alert">
+                  {rebuildError}
+                </div>
+              )}
+              {!detail.memoryItems.length && !rebuilding && (
+                <div className="stateCard">
+                  No memory items have been built for this resource yet.
+                </div>
+              )}
               {detail.memoryItems.map((item) => (
                 <article className="memoryItem" key={item.id}>
                   <div className="memoryItemTop">
@@ -603,10 +642,7 @@ function AskView() {
           <p>Run the same question through five memory configurations.</p>
         </div>
         <div className={styles.queryStatus}>
-          ●{" "}
-          {process.env.NEXT_PUBLIC_LINKMIND_API_URL
-            ? "API data"
-            : "Mock dataset"}
+          ● {configurations[0]?.source === "api" ? "API data" : "Mock dataset"}
         </div>
       </div>
       <form
@@ -865,6 +901,17 @@ function HomeContent() {
     setDetailError("");
     setDetailLoading(false);
   };
+  const rebuildResource = async (
+    resourceId: ResourceId,
+  ): Promise<MemoryItem[]> => {
+    const result = await dataSource.rebuildMemories([resourceId]);
+    setSelectedResource((current) =>
+      current?.id === resourceId
+        ? { ...current, memoryItems: result.memories }
+        : current,
+    );
+    return result.memories;
+  };
   const changeTab = (next: Tab) => router.push(`${pathname}?tab=${next}`);
   return (
     <div className={styles.app}>
@@ -909,6 +956,7 @@ function HomeContent() {
           retry={() => {
             if (detailTarget) void openResource(detailTarget);
           }}
+          rebuild={rebuildResource}
           close={closeDetail}
         />
       )}

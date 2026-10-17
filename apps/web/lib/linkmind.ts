@@ -32,6 +32,12 @@ export type MemoryItem = {
 
 export type ResourceDetail = Resource & { memoryItems: MemoryItem[] };
 
+export type MemoryRebuildResult = {
+  resourcesProcessed: number;
+  chunksCreated: number;
+  memories: MemoryItem[];
+};
+
 export type CreateResourceInput = {
   title: string;
   type: ResourceType;
@@ -49,11 +55,14 @@ export type RetrievalResult = {
   latency: string;
 };
 
+export type DataSourceKind = "api" | "mock";
+
 export type RetrievalConfiguration = {
   id: "E1" | "E2" | "E3" | "E4" | "E5";
   title: string;
   description: string;
   tone: "blue" | "violet" | "teal" | "amber" | "rose";
+  source: DataSourceKind;
   results: RetrievalResult[];
 };
 
@@ -80,9 +89,7 @@ export type LinkMindDataSource = {
   compareQuery: (question: string) => Promise<RetrievalConfiguration[]>;
   getEvaluation: () => Promise<EvaluationSnapshot>;
   seedDemo: () => Promise<{ resourcesAdded: number; questionsAdded: number }>;
-  rebuildMemories: (
-    resourceIds?: ResourceId[],
-  ) => Promise<{ memoriesBuilt: number }>;
+  rebuildMemories: (resourceIds?: ResourceId[]) => Promise<MemoryRebuildResult>;
 };
 
 const asResourceId = (value: string): ResourceId => value as ResourceId;
@@ -140,6 +147,7 @@ const configurations: RetrievalConfiguration[] = [
     title: "BM25 / raw",
     description: "Lexical search over source chunks",
     tone: "blue",
+    source: "mock",
     results: [
       {
         rank: 1,
@@ -168,6 +176,7 @@ const configurations: RetrievalConfiguration[] = [
     title: "Vector / raw",
     description: "Semantic search over source chunks",
     tone: "violet",
+    source: "mock",
     results: [
       {
         rank: 1,
@@ -196,6 +205,7 @@ const configurations: RetrievalConfiguration[] = [
     title: "Vector / summary",
     description: "Semantic search over summaries",
     tone: "teal",
+    source: "mock",
     results: [
       {
         rank: 1,
@@ -224,6 +234,7 @@ const configurations: RetrievalConfiguration[] = [
     title: "Vector / facts",
     description: "Semantic search over atomic facts",
     tone: "amber",
+    source: "mock",
     results: [
       {
         rank: 1,
@@ -252,6 +263,7 @@ const configurations: RetrievalConfiguration[] = [
     title: "Facts + graph",
     description: "Facts expanded through bounded relationships",
     tone: "rose",
+    source: "mock",
     results: [
       {
         rank: 1,
@@ -323,6 +335,30 @@ const evaluation: EvaluationSnapshot = {
 
 const copyResource = (resource: Resource): Resource => ({ ...resource });
 
+const memoryItemsForResource = (resource: Resource): MemoryItem[] => [
+  {
+    id: `${resource.id}-raw`,
+    representation: "Raw chunk",
+    content: resource.content,
+    evidence: resource.excerpt,
+    status: "reviewed",
+  },
+  {
+    id: `${resource.id}-summary`,
+    representation: "Summary",
+    content: `This source covers ${resource.title.toLowerCase()} and its relationship to source-grounded memory.`,
+    evidence: resource.excerpt,
+    status: "reviewed",
+  },
+  {
+    id: `${resource.id}-fact`,
+    representation: "Structured fact",
+    content: resource.content.split(".")[0] ?? resource.excerpt,
+    evidence: resource.excerpt,
+    status: "generated",
+  },
+];
+
 export const createMockDataSource = (): LinkMindDataSource => ({
   listResources: async () => resources.map(copyResource),
   getResource: async (id) => {
@@ -330,29 +366,7 @@ export const createMockDataSource = (): LinkMindDataSource => ({
     if (!resource) throw new Error("Resource not found");
     return {
       ...copyResource(resource),
-      memoryItems: [
-        {
-          id: `${resource.id}-raw`,
-          representation: "Raw chunk",
-          content: resource.content,
-          evidence: resource.excerpt,
-          status: "reviewed",
-        },
-        {
-          id: `${resource.id}-summary`,
-          representation: "Summary",
-          content: `This source covers ${resource.title.toLowerCase()} and its relationship to source-grounded memory.`,
-          evidence: resource.excerpt,
-          status: "reviewed",
-        },
-        {
-          id: `${resource.id}-fact`,
-          representation: "Structured fact",
-          content: resource.content.split(".")[0] ?? resource.excerpt,
-          evidence: resource.excerpt,
-          status: "generated",
-        },
-      ],
+      memoryItems: memoryItemsForResource(resource),
     };
   },
   addResource: async (input) => {
@@ -378,11 +392,17 @@ export const createMockDataSource = (): LinkMindDataSource => ({
     rows: evaluation.rows.map((row) => ({ ...row })),
   }),
   seedDemo: async () => ({ resourcesAdded: 0, questionsAdded: 30 }),
-  rebuildMemories: async (resourceIds) => ({
-    memoriesBuilt: resourceIds?.length
-      ? resourceIds.length * 3
-      : resources.length * 3,
-  }),
+  rebuildMemories: async (resourceIds) => {
+    const selected = resourceIds?.length
+      ? resources.filter((resource) => resourceIds.includes(resource.id))
+      : resources;
+    const memories = selected.flatMap(memoryItemsForResource);
+    return {
+      resourcesProcessed: selected.length,
+      chunksCreated: memories.length,
+      memories,
+    };
+  },
 });
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -398,32 +418,274 @@ const numberValue = (value: unknown, field: string): number => {
   return value;
 };
 
+const nullableStringValue = (value: unknown, field: string): string | null => {
+  if (value === null || value === undefined) return null;
+  return stringValue(value, field);
+};
+
+type ApiResourceType =
+  | "note"
+  | "webpage"
+  | "youtube_transcript"
+  | "github_readme"
+  | "paper_excerpt"
+  | "other";
+
+const apiResourceTypes: readonly ApiResourceType[] = [
+  "note",
+  "webpage",
+  "youtube_transcript",
+  "github_readme",
+  "paper_excerpt",
+  "other",
+];
+
+const resourceTypeToApi: Record<ResourceType, ApiResourceType> = {
+  Note: "note",
+  "Web page": "webpage",
+  "YouTube transcript": "youtube_transcript",
+  "GitHub README": "github_readme",
+  "Paper excerpt": "paper_excerpt",
+};
+
+const apiTypeToResource: Record<ApiResourceType, ResourceType> = {
+  note: "Note",
+  webpage: "Web page",
+  youtube_transcript: "YouTube transcript",
+  github_readme: "GitHub README",
+  paper_excerpt: "Paper excerpt",
+  other: "Note",
+};
+
+const isApiResourceType = (value: string): value is ApiResourceType =>
+  apiResourceTypes.some((type) => type === value);
+
+const formatAddedDate = (value: string): string => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const elapsedDays = Math.floor(
+    (Date.now() - date.getTime()) / (24 * 60 * 60 * 1000),
+  );
+  if (elapsedDays <= 0) return "Today";
+  if (elapsedDays === 1) return "Yesterday";
+  if (elapsedDays < 7) return `${elapsedDays} days ago`;
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year:
+      date.getFullYear() === new Date().getFullYear() ? undefined : "numeric",
+  });
+};
+
+const sourceLabel = (sourceUrl: string | null): string => {
+  if (!sourceUrl) return "";
+  try {
+    return new URL(sourceUrl).hostname.replace(/^www\./, "");
+  } catch {
+    return sourceUrl;
+  }
+};
+
 const parseResource = (value: unknown): Resource => {
   if (!isRecord(value)) throw new Error("Invalid resource response");
-  const type = stringValue(value.type, "resource.type");
-  if (!(resourceTypes as readonly string[]).includes(type))
-    throw new Error("Invalid resource type");
+  const apiType = stringValue(value.type, "resource.type");
+  if (!isApiResourceType(apiType)) throw new Error("Invalid resource type");
+  const content = stringValue(value.content, "resource.content");
+  const sourceUrl = nullableStringValue(value.sourceUrl, "resource.sourceUrl");
   return {
     id: asResourceId(stringValue(value.id, "resource.id")),
     title: stringValue(value.title, "resource.title"),
-    type: type as ResourceType,
-    source: stringValue(value.source ?? "", "resource.source"),
-    content: stringValue(
-      value.content ?? value.excerpt ?? "",
-      "resource.content",
+    type: apiTypeToResource[apiType],
+    source: sourceLabel(sourceUrl),
+    content,
+    excerpt: content.slice(0, 130),
+    added: formatAddedDate(
+      nullableStringValue(value.createdAt, "resource.createdAt") ?? "",
     ),
-    excerpt: stringValue(
-      value.excerpt ?? value.content ?? "",
-      "resource.excerpt",
-    ),
-    added: stringValue(value.added ?? "", "resource.added"),
   };
 };
 
 const parseResources = (value: unknown): Resource[] => {
-  if (!Array.isArray(value)) throw new Error("Invalid resources response");
-  return value.map(parseResource);
+  if (!isRecord(value) || !Array.isArray(value.resources))
+    throw new Error("Invalid resources response");
+  return value.resources.map(parseResource);
 };
+
+type ApiMemoryRepresentation = "raw" | "summary" | "fact";
+type ApiProvenance = "verified" | "generated" | "unverified";
+
+const memoryRepresentationLabels: Record<
+  ApiMemoryRepresentation,
+  MemoryRepresentation
+> = {
+  raw: "Raw chunk",
+  summary: "Summary",
+  fact: "Structured fact",
+};
+
+const parseMemoryRepresentation = (value: string): ApiMemoryRepresentation => {
+  switch (value) {
+    case "raw":
+    case "summary":
+    case "fact":
+      return value;
+    default:
+      throw new Error("Invalid memory representation");
+  }
+};
+
+const parseProvenance = (value: string): ApiProvenance => {
+  switch (value) {
+    case "verified":
+    case "generated":
+    case "unverified":
+      return value;
+    default:
+      throw new Error("Invalid memory provenance");
+  }
+};
+
+const parseMemoryItems = (value: unknown): MemoryItem[] => {
+  if (!Array.isArray(value)) throw new Error("Invalid memory response");
+  return value.map((item) => {
+    if (!isRecord(item)) throw new Error("Invalid memory item response");
+    const representation = parseMemoryRepresentation(
+      stringValue(item.representation, "memory.representation"),
+    );
+    const provenance = parseProvenance(
+      stringValue(item.provenance, "memory.provenance"),
+    );
+    return {
+      id: stringValue(item.id, "memory.id"),
+      representation: memoryRepresentationLabels[representation],
+      content: stringValue(item.content, "memory.content"),
+      evidence:
+        nullableStringValue(item.evidenceText, "memory.evidenceText") ??
+        stringValue(item.content, "memory.content"),
+      status: provenance === "verified" ? "reviewed" : "generated",
+    };
+  });
+};
+
+const parseResourceDetail = (value: unknown): ResourceDetail => {
+  if (!isRecord(value) || !isRecord(value.resource))
+    throw new Error("Invalid resource detail response");
+  const memoryItems = Array.isArray(value.memoryItems)
+    ? parseMemoryItems(value.memoryItems)
+    : [];
+  return { ...parseResource(value.resource), memoryItems };
+};
+
+const textValue = (value: unknown, field: string): string => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  throw new Error(`Invalid API response field: ${field}`);
+};
+
+const parseConfigurationId = (value: string): RetrievalConfiguration["id"] => {
+  switch (value) {
+    case "E1":
+    case "E2":
+    case "E3":
+    case "E4":
+    case "E5":
+      return value;
+    default:
+      throw new Error("Invalid retrieval configuration id");
+  }
+};
+
+const parseConfigurationTone = (
+  value: string,
+): RetrievalConfiguration["tone"] => {
+  switch (value) {
+    case "blue":
+    case "violet":
+    case "teal":
+    case "amber":
+    case "rose":
+      return value;
+    default:
+      throw new Error("Invalid retrieval configuration tone");
+  }
+};
+
+const parseRetrievalConfigurations = (
+  value: unknown,
+): RetrievalConfiguration[] => {
+  if (!Array.isArray(value)) throw new Error("Invalid comparison response");
+  return value.map((configuration) => {
+    if (!isRecord(configuration))
+      throw new Error("Invalid retrieval configuration");
+    const results = configuration.results;
+    if (!Array.isArray(results)) throw new Error("Invalid retrieval results");
+    return {
+      id: parseConfigurationId(
+        stringValue(configuration.id, "configuration.id"),
+      ),
+      title: stringValue(configuration.title, "configuration.title"),
+      description: stringValue(
+        configuration.description,
+        "configuration.description",
+      ),
+      tone: parseConfigurationTone(
+        stringValue(configuration.tone, "configuration.tone"),
+      ),
+      source: "api",
+      results: results.map((result) => {
+        if (!isRecord(result)) throw new Error("Invalid retrieval result");
+        return {
+          rank: numberValue(result.rank, "result.rank"),
+          resourceTitle: textValue(
+            result.resourceTitle ?? result.resourceId,
+            "result.resourceTitle",
+          ),
+          memoryType: textValue(
+            result.memoryType ?? result.representation,
+            "result.memoryType",
+          ),
+          content: stringValue(result.content, "result.content"),
+          evidence: textValue(
+            result.evidence ?? result.evidenceText,
+            "result.evidence",
+          ),
+          score: textValue(result.score, "result.score"),
+          latency:
+            result.latency !== undefined && result.latency !== null
+              ? textValue(result.latency, "result.latency")
+              : `${numberValue(result.latencyMs, "result.latencyMs")} ms`,
+        };
+      }),
+    };
+  });
+};
+
+const parseEvaluationRows = (value: unknown): EvaluationRow[] => {
+  if (!Array.isArray(value)) throw new Error("Invalid evaluation rows");
+  return value.map((row) => {
+    if (!isRecord(row)) throw new Error("Invalid evaluation row");
+    return {
+      configuration: stringValue(row.configuration, "evaluation.configuration"),
+      recallAt3: stringValue(row.recallAt3, "evaluation.recallAt3"),
+      mrr: stringValue(row.mrr, "evaluation.mrr"),
+      latency: stringValue(row.latency, "evaluation.latency"),
+      evidenceCorrectness: stringValue(
+        row.evidenceCorrectness,
+        "evaluation.evidenceCorrectness",
+      ),
+    };
+  });
+};
+
+class LinkMindApiError extends Error {
+  public constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "LinkMindApiError";
+  }
+}
 
 const request = async (
   baseUrl: string,
@@ -434,65 +696,109 @@ const request = async (
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
-  if (!response.ok) throw new Error(`LinkMind API returned ${response.status}`);
-  return response.json() as Promise<unknown>;
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+  if (!response.ok) {
+    const message =
+      isRecord(body) && typeof body.error === "string"
+        ? body.error
+        : `LinkMind API returned ${response.status}`;
+    throw new LinkMindApiError(response.status, message);
+  }
+  return body;
 };
 
-export const createHttpDataSource = (baseUrl: string): LinkMindDataSource => ({
+const isNotFound = (cause: unknown): boolean =>
+  cause instanceof LinkMindApiError && cause.status === 404;
+
+export const createHttpDataSource = (
+  baseUrl: string,
+  fallback: LinkMindDataSource = createMockDataSource(),
+): LinkMindDataSource => ({
   listResources: async () =>
     parseResources(await request(baseUrl, "/api/resources")),
   getResource: async (id) => {
-    const value = await request(baseUrl, `/api/resources/${id}`);
-    if (!isRecord(value) || !Array.isArray(value.memoryItems))
-      throw new Error("Invalid resource detail response");
-    return {
-      ...parseResource(value),
-      memoryItems: value.memoryItems as MemoryItem[],
-    };
+    return parseResourceDetail(await request(baseUrl, `/api/resources/${id}`));
   },
-  addResource: async (input) =>
-    parseResource(
-      await request(baseUrl, "/api/resources", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
-    ),
-  compareQuery: async (question) => {
-    const value = await request(baseUrl, "/api/query/compare", {
+  addResource: async (input) => {
+    const value = await request(baseUrl, "/api/resources", {
       method: "POST",
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({
+        title: input.title,
+        type: resourceTypeToApi[input.type],
+        sourceUrl: input.source.trim() || undefined,
+        content: input.content,
+      }),
     });
-    if (!isRecord(value) || !Array.isArray(value.configurations))
-      throw new Error("Invalid comparison response");
-    return value.configurations as RetrievalConfiguration[];
+    if (!isRecord(value) || !("resource" in value))
+      throw new Error("Invalid resource create response");
+    if (!isRecord(value.resource))
+      throw new Error("Invalid resource create response");
+    return parseResource(value.resource);
+  },
+  compareQuery: async (question) => {
+    try {
+      const value = await request(baseUrl, "/api/query/compare", {
+        method: "POST",
+        body: JSON.stringify({ question }),
+      });
+      if (!isRecord(value) || !Array.isArray(value.configurations))
+        throw new Error("Invalid comparison response");
+      return parseRetrievalConfigurations(value.configurations);
+    } catch (cause) {
+      if (isNotFound(cause)) return fallback.compareQuery(question);
+      throw cause;
+    }
   },
   getEvaluation: async () => {
-    const value = await request(baseUrl, "/api/evaluation/latest");
-    if (!isRecord(value)) throw new Error("Invalid evaluation response");
-    return {
-      runLabel: stringValue(value.runLabel, "evaluation.runLabel"),
-      questionCount: numberValue(
-        value.questionCount,
-        "evaluation.questionCount",
-      ),
-      configurationCount: numberValue(
-        value.configurationCount,
-        "evaluation.configurationCount",
-      ),
-      datasetVersion: stringValue(
-        value.datasetVersion,
-        "evaluation.datasetVersion",
-      ),
-      rows: Array.isArray(value.rows) ? (value.rows as EvaluationRow[]) : [],
-    };
+    try {
+      const value = await request(baseUrl, "/api/evaluation/latest");
+      if (!isRecord(value)) throw new Error("Invalid evaluation response");
+      return {
+        runLabel: stringValue(value.runLabel, "evaluation.runLabel"),
+        questionCount: numberValue(
+          value.questionCount,
+          "evaluation.questionCount",
+        ),
+        configurationCount: numberValue(
+          value.configurationCount,
+          "evaluation.configurationCount",
+        ),
+        datasetVersion: stringValue(
+          value.datasetVersion,
+          "evaluation.datasetVersion",
+        ),
+        rows: parseEvaluationRows(value.rows ?? []),
+      };
+    } catch (cause) {
+      if (isNotFound(cause)) return fallback.getEvaluation();
+      throw cause;
+    }
   },
   seedDemo: async () => {
-    const value = await request(baseUrl, "/api/demo/seed", { method: "POST" });
-    if (!isRecord(value)) throw new Error("Invalid seed response");
-    return {
-      resourcesAdded: numberValue(value.resourcesAdded, "seed.resourcesAdded"),
-      questionsAdded: numberValue(value.questionsAdded, "seed.questionsAdded"),
-    };
+    try {
+      const value = await request(baseUrl, "/api/demo/seed", {
+        method: "POST",
+      });
+      if (!isRecord(value)) throw new Error("Invalid seed response");
+      return {
+        resourcesAdded: numberValue(
+          value.resourcesAdded,
+          "seed.resourcesAdded",
+        ),
+        questionsAdded: numberValue(
+          value.questionsAdded,
+          "seed.questionsAdded",
+        ),
+      };
+    } catch (cause) {
+      if (isNotFound(cause)) return fallback.seedDemo();
+      throw cause;
+    }
   },
   rebuildMemories: async (resourceIds) => {
     const value = await request(baseUrl, "/api/memories/rebuild", {
@@ -501,7 +807,12 @@ export const createHttpDataSource = (baseUrl: string): LinkMindDataSource => ({
     });
     if (!isRecord(value)) throw new Error("Invalid rebuild response");
     return {
-      memoriesBuilt: numberValue(value.memoriesBuilt, "rebuild.memoriesBuilt"),
+      resourcesProcessed: numberValue(
+        value.resourcesProcessed,
+        "rebuild.resourcesProcessed",
+      ),
+      chunksCreated: numberValue(value.chunksCreated, "rebuild.chunksCreated"),
+      memories: parseMemoryItems(value.memories),
     };
   },
 });

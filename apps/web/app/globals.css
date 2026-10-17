@@ -97,6 +97,12 @@ button:disabled {
   padding-top: 20px;
 }
 
+.memoryListHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
 .memoryItem {
   border: 1px solid #e5e9ed;
   border-radius: 7px;
