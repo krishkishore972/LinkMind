@@ -1,0 +1,207 @@
+// use prisma-8
+
+types {
+  Embedding1536 = pgvector.Vector(1536)
+}
+
+enum ResourceType {
+  @@type("pg/text@1")
+
+  NOTE = "note"
+  WEBPAGE = "webpage"
+  YOUTUBE_TRANSCRIPT = "youtube_transcript"
+  GITHUB_README = "github_readme"
+  PAPER_EXCERPT = "paper_excerpt"
+  OTHER = "other"
+}
+
+enum MemoryRepresentation {
+  @@type("pg/text@1")
+
+  RAW = "raw"
+  SUMMARY = "summary"
+  FACT = "fact"
+}
+
+enum ProvenanceStatus {
+  @@type("pg/text@1")
+
+  VERIFIED = "verified"
+  GENERATED = "generated"
+  UNVERIFIED = "unverified"
+}
+
+enum RelationType {
+  @@type("pg/text@1")
+
+  RELATED_TO = "related_to"
+  SUPPORTS = "supports"
+  CONTRADICTS = "contradicts"
+  DERIVED_FROM = "derived_from"
+  SAME_ENTITY = "same_entity"
+}
+
+enum QuestionCategory {
+  @@type("pg/text@1")
+
+  DIRECT_FACT = "direct_fact"
+  RESOURCE_IDENTIFICATION = "resource_identification"
+  CROSS_RESOURCE = "cross_resource"
+  TEMPORAL = "temporal"
+  UNANSWERABLE = "unanswerable"
+}
+
+enum Answerability {
+  @@type("pg/text@1")
+
+  ANSWERABLE = "answerable"
+  UNANSWERABLE = "unanswerable"
+}
+
+enum RetrievalConfiguration {
+  @@type("pg/text@1")
+
+  E1_BM25_RAW = "E1"
+  E2_VECTOR_RAW = "E2"
+  E3_VECTOR_SUMMARY = "E3"
+  E4_VECTOR_FACT = "E4"
+  E5_VECTOR_FACT_GRAPH = "E5"
+}
+
+model Resource {
+  id          String              @id @default(uuid())
+  title       String
+  type        ResourceType
+  sourceUrl   String?
+  content     String
+  contentHash String?
+  createdAt   TimestamptzString   @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  memoryItems      MemoryItem[]
+  expectedEvidence ExpectedEvidence[]
+
+  @@index([type])
+  @@map("resources")
+}
+
+model MemoryItem {
+  id                  String              @id @default(uuid())
+  resourceId          String
+  representation      MemoryRepresentation
+  content             String
+  evidenceText        String?
+  evidenceStart       Int?
+  evidenceEnd         Int?
+  provenance          ProvenanceStatus
+  entities            Json?
+  metadata            Json?
+  embedding           Embedding1536?
+  embeddingModel      String?
+  embeddingDimensions Int?
+  createdAt           TimestamptzString   @default(now())
+  updatedAt           temporal.updatedAtString()
+
+  resource         Resource           @relation(fields: [resourceId], references: [id])
+  outgoingEdges    MemoryEdge[]       @relation("sourceMemory")
+  incomingEdges    MemoryEdge[]       @relation("targetMemory")
+  expectedEvidence ExpectedEvidence[]
+
+  @@index([resourceId])
+  @@index([representation])
+  @@index([resourceId, representation])
+  @@map("memory_items")
+}
+
+model MemoryEdge {
+  id             String              @id @default(uuid())
+  sourceMemoryId String
+  targetMemoryId String
+  relation       RelationType
+  confidence     Float?
+  provenance     ProvenanceStatus
+  evidenceText   String?
+  createdAt      TimestamptzString   @default(now())
+
+  sourceMemory MemoryItem @relation("sourceMemory", fields: [sourceMemoryId], references: [id])
+  targetMemory MemoryItem @relation("targetMemory", fields: [targetMemoryId], references: [id])
+
+  @@unique([sourceMemoryId, targetMemoryId, relation])
+  @@index([sourceMemoryId])
+  @@index([targetMemoryId])
+  @@map("memory_edges")
+}
+
+model EvaluationQuestion {
+  id             String             @id @default(uuid())
+  question       String
+  category       QuestionCategory
+  answerability  Answerability
+  expectedAnswer String?
+  datasetVersion String
+  createdAt      TimestamptzString  @default(now())
+
+  expectedEvidence ExpectedEvidence[]
+  results          ExperimentResult[]
+
+  @@index([datasetVersion])
+  @@map("evaluation_questions")
+}
+
+model ExpectedEvidence {
+  id         String   @id @default(uuid())
+  questionId String
+  resourceId String
+  memoryId   String?
+  evidence   String
+  isPrimary  Boolean  @default(false)
+
+  question EvaluationQuestion @relation(fields: [questionId], references: [id])
+  resource Resource           @relation(fields: [resourceId], references: [id])
+  memory   MemoryItem?        @relation(fields: [memoryId], references: [id])
+
+  @@unique([questionId, resourceId, evidence])
+  @@index([questionId])
+  @@index([resourceId])
+  @@map("expected_evidence")
+}
+
+model ExperimentRun {
+  id                        String              @id @default(uuid())
+  datasetVersion            String
+  retrievalBudget           Json
+  embeddingModel            String?
+  embeddingDimensions       Int?
+  embeddingLatencyIncluded  Boolean
+  startedAt                 TimestamptzString   @default(now())
+  completedAt               TimestamptzString?
+
+  results ExperimentResult[]
+
+  @@index([datasetVersion])
+  @@map("experiment_runs")
+}
+
+model ExperimentResult {
+  id                  String                 @id @default(uuid())
+  runId               String
+  questionId          String
+  configuration       RetrievalConfiguration
+  returnedMemoryIds   Json
+  returnedResourceIds Json
+  firstRelevantRank   Int?
+  recallAt3           Float?
+  mrr                 Float?
+  evidenceCorrect     Boolean?
+  abstained           Boolean?
+  latencyMs           Int
+  rawOutcome          Json?
+
+  run      ExperimentRun      @relation(fields: [runId], references: [id])
+  question EvaluationQuestion @relation(fields: [questionId], references: [id])
+
+  @@unique([runId, questionId, configuration])
+  @@index([runId])
+  @@index([questionId])
+  @@map("experiment_results")
+}

@@ -1,13 +1,23 @@
 {
-  "name": "db",
+  "name": "@repo/db",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "contract:emit": "prisma contract emit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@prisma/orm-extension-pgvector": "8.0.0-rc.18",
+    "@prisma/orm-postgres": "8.0.0-rc.18",
+    "dotenv": "^18.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.1",
+    "prisma": "8.0.0-rc.23"
+  }
 }

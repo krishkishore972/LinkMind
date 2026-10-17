@@ -5,4 +5,4 @@ allowBuilds:
   '@prisma/engines': false
   esbuild: true
   prisma: false
-  workerd: set this to true or false
+  workerd: false

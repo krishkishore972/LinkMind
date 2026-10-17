@@ -1,0 +1,1261 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.evaluation_questions",
+    "label": "Create table \"evaluation_questions\"",
+    "summary": "Creates table \"evaluation_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "evaluation_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"evaluation_questions\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"evaluation_questions\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"evaluation_questions\"",
+        "sql": "CREATE TABLE \"public\".\"evaluation_questions\" (\n  \"answerability\" text NOT NULL,\n  \"category\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"datasetVersion\" text NOT NULL,\n  \"expectedAnswer\" text,\n  \"id\" text NOT NULL,\n  \"question\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"evaluation_questions_answerability_check_9f469c72\" CHECK (\"answerability\" IN ('answerable', 'unanswerable')),\n  CONSTRAINT \"evaluation_questions_category_check_ef07b59c\" CHECK (\"category\" IN ('direct_fact', 'resource_identification', 'cross_resource', 'temporal', 'unanswerable'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"evaluation_questions\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"evaluation_questions\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.expected_evidence",
+    "label": "Create table \"expected_evidence\"",
+    "summary": "Creates table \"expected_evidence\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"expected_evidence\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"expected_evidence\"",
+        "sql": "CREATE TABLE \"public\".\"expected_evidence\" (\n  \"evidence\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"isPrimary\" bool DEFAULT false NOT NULL,\n  \"memoryId\" text,\n  \"questionId\" text NOT NULL,\n  \"resourceId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"expected_evidence\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.experiment_results",
+    "label": "Create table \"experiment_results\"",
+    "summary": "Creates table \"experiment_results\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "experiment_results"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"experiment_results\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"experiment_results\"",
+        "sql": "CREATE TABLE \"public\".\"experiment_results\" (\n  \"abstained\" bool,\n  \"configuration\" text NOT NULL,\n  \"evidenceCorrect\" bool,\n  \"firstRelevantRank\" int4,\n  \"id\" text NOT NULL,\n  \"latencyMs\" int4 NOT NULL,\n  \"mrr\" float8,\n  \"questionId\" text NOT NULL,\n  \"rawOutcome\" json,\n  \"recallAt3\" float8,\n  \"returnedMemoryIds\" json NOT NULL,\n  \"returnedResourceIds\" json NOT NULL,\n  \"runId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"experiment_results_configuration_check_344f8627\" CHECK (\"configuration\" IN ('E1', 'E2', 'E3', 'E4', 'E5'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"experiment_results\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.experiment_runs",
+    "label": "Create table \"experiment_runs\"",
+    "summary": "Creates table \"experiment_runs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "experiment_runs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"experiment_runs\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_runs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"experiment_runs\"",
+        "sql": "CREATE TABLE \"public\".\"experiment_runs\" (\n  \"completedAt\" timestamptz,\n  \"datasetVersion\" text NOT NULL,\n  \"embeddingDimensions\" int4,\n  \"embeddingLatencyIncluded\" bool NOT NULL,\n  \"embeddingModel\" text,\n  \"id\" text NOT NULL,\n  \"retrievalBudget\" json NOT NULL,\n  \"startedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"experiment_runs\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_runs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.memory_edges",
+    "label": "Create table \"memory_edges\"",
+    "summary": "Creates table \"memory_edges\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "memory_edges"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"memory_edges\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"memory_edges\"",
+        "sql": "CREATE TABLE \"public\".\"memory_edges\" (\n  \"confidence\" float8,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"evidenceText\" text,\n  \"id\" text NOT NULL,\n  \"provenance\" text NOT NULL,\n  \"relation\" text NOT NULL,\n  \"sourceMemoryId\" text NOT NULL,\n  \"targetMemoryId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"memory_edges_provenance_check_b333fb7a\" CHECK (\"provenance\" IN ('verified', 'generated', 'unverified')),\n  CONSTRAINT \"memory_edges_relation_check_486cb71d\" CHECK (\"relation\" IN ('related_to', 'supports', 'contradicts', 'derived_from', 'same_entity'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"memory_edges\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.memory_items",
+    "label": "Create table \"memory_items\"",
+    "summary": "Creates table \"memory_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "memory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"memory_items\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"memory_items\"",
+        "sql": "CREATE TABLE \"public\".\"memory_items\" (\n  \"content\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"embedding\" vector(1536),\n  \"embeddingDimensions\" int4,\n  \"embeddingModel\" text,\n  \"entities\" json,\n  \"evidenceEnd\" int4,\n  \"evidenceStart\" int4,\n  \"evidenceText\" text,\n  \"id\" text NOT NULL,\n  \"metadata\" json,\n  \"provenance\" text NOT NULL,\n  \"representation\" text NOT NULL,\n  \"resourceId\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"memory_items_provenance_check_b333fb7a\" CHECK (\"provenance\" IN ('verified', 'generated', 'unverified')),\n  CONSTRAINT \"memory_items_representation_check_14f9306a\" CHECK (\"representation\" IN ('raw', 'summary', 'fact'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"memory_items\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.resources",
+    "label": "Create table \"resources\"",
+    "summary": "Creates table \"resources\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "resources"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"resources\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resources\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"resources\"",
+        "sql": "CREATE TABLE \"public\".\"resources\" (\n  \"content\" text NOT NULL,\n  \"contentHash\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"sourceUrl\" text,\n  \"title\" text NOT NULL,\n  \"type\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"resources_type_check_6214cf08\" CHECK (\"type\" IN ('note', 'webpage', 'youtube_transcript', 'github_readme', 'paper_excerpt', 'other'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"resources\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resources\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.expected_evidence.expected_evidence_questionId_resourceId_evidence_key",
+    "label": "Add unique constraint on \"expected_evidence\" (questionId, resourceId, evidence)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "expected_evidence_questionId_resourceId_evidence_key",
+        "table": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"expected_evidence_questionId_resourceId_evidence_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_questionId_resourceId_evidence_key",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"expected_evidence_questionId_resourceId_evidence_key\"",
+        "sql": "ALTER TABLE \"public\".\"expected_evidence\" ADD CONSTRAINT \"expected_evidence_questionId_resourceId_evidence_key\" UNIQUE (\"questionId\", \"resourceId\", \"evidence\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"expected_evidence_questionId_resourceId_evidence_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_questionId_resourceId_evidence_key",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.experiment_results.experiment_results_runId_questionId_configuration_key",
+    "label": "Add unique constraint on \"experiment_results\" (runId, questionId, configuration)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "experiment_results_runId_questionId_configuration_key",
+        "table": "experiment_results"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"experiment_results_runId_questionId_configuration_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "experiment_results_runId_questionId_configuration_key",
+          "public",
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"experiment_results_runId_questionId_configuration_key\"",
+        "sql": "ALTER TABLE \"public\".\"experiment_results\" ADD CONSTRAINT \"experiment_results_runId_questionId_configuration_key\" UNIQUE (\"runId\", \"questionId\", \"configuration\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"experiment_results_runId_questionId_configuration_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "experiment_results_runId_questionId_configuration_key",
+          "public",
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.memory_edges.memory_edges_sourceMemoryId_targetMemoryId_relation_key",
+    "label": "Add unique constraint on \"memory_edges\" (sourceMemoryId, targetMemoryId, relation)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "memory_edges_sourceMemoryId_targetMemoryId_relation_key",
+        "table": "memory_edges"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"memory_edges_sourceMemoryId_targetMemoryId_relation_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_edges_sourceMemoryId_targetMemoryId_relation_key",
+          "public",
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"memory_edges_sourceMemoryId_targetMemoryId_relation_key\"",
+        "sql": "ALTER TABLE \"public\".\"memory_edges\" ADD CONSTRAINT \"memory_edges_sourceMemoryId_targetMemoryId_relation_key\" UNIQUE (\"sourceMemoryId\", \"targetMemoryId\", \"relation\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"memory_edges_sourceMemoryId_targetMemoryId_relation_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_edges_sourceMemoryId_targetMemoryId_relation_key",
+          "public",
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.evaluation_questions.evaluation_questions_datasetVersion_idx_40434891",
+    "label": "Create index \"evaluation_questions_datasetVersion_idx_40434891\" on \"evaluation_questions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "evaluation_questions_datasetVersion_idx_40434891",
+        "table": "evaluation_questions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"evaluation_questions_datasetVersion_idx_40434891\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"evaluation_questions_datasetVersion_idx_40434891\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"evaluation_questions_datasetVersion_idx_40434891\"",
+        "sql": "CREATE INDEX \"evaluation_questions_datasetVersion_idx_40434891\" ON \"public\".\"evaluation_questions\" (\"datasetVersion\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"evaluation_questions_datasetVersion_idx_40434891\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"evaluation_questions_datasetVersion_idx_40434891\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.expected_evidence.expected_evidence_memoryId_idx_343972a2",
+    "label": "Create index \"expected_evidence_memoryId_idx_343972a2\" on \"expected_evidence\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "expected_evidence_memoryId_idx_343972a2",
+        "table": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"expected_evidence_memoryId_idx_343972a2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence_memoryId_idx_343972a2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"expected_evidence_memoryId_idx_343972a2\"",
+        "sql": "CREATE INDEX \"expected_evidence_memoryId_idx_343972a2\" ON \"public\".\"expected_evidence\" (\"memoryId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"expected_evidence_memoryId_idx_343972a2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence_memoryId_idx_343972a2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.expected_evidence.expected_evidence_questionId_idx_fdb42076",
+    "label": "Create index \"expected_evidence_questionId_idx_fdb42076\" on \"expected_evidence\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "expected_evidence_questionId_idx_fdb42076",
+        "table": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"expected_evidence_questionId_idx_fdb42076\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence_questionId_idx_fdb42076\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"expected_evidence_questionId_idx_fdb42076\"",
+        "sql": "CREATE INDEX \"expected_evidence_questionId_idx_fdb42076\" ON \"public\".\"expected_evidence\" (\"questionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"expected_evidence_questionId_idx_fdb42076\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence_questionId_idx_fdb42076\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.expected_evidence.expected_evidence_resourceId_idx_72964925",
+    "label": "Create index \"expected_evidence_resourceId_idx_72964925\" on \"expected_evidence\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "expected_evidence_resourceId_idx_72964925",
+        "table": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"expected_evidence_resourceId_idx_72964925\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence_resourceId_idx_72964925\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"expected_evidence_resourceId_idx_72964925\"",
+        "sql": "CREATE INDEX \"expected_evidence_resourceId_idx_72964925\" ON \"public\".\"expected_evidence\" (\"resourceId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"expected_evidence_resourceId_idx_72964925\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"expected_evidence_resourceId_idx_72964925\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.experiment_results.experiment_results_questionId_idx_fdb42076",
+    "label": "Create index \"experiment_results_questionId_idx_fdb42076\" on \"experiment_results\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "experiment_results_questionId_idx_fdb42076",
+        "table": "experiment_results"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"experiment_results_questionId_idx_fdb42076\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_results_questionId_idx_fdb42076\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"experiment_results_questionId_idx_fdb42076\"",
+        "sql": "CREATE INDEX \"experiment_results_questionId_idx_fdb42076\" ON \"public\".\"experiment_results\" (\"questionId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"experiment_results_questionId_idx_fdb42076\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_results_questionId_idx_fdb42076\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.experiment_results.experiment_results_runId_idx_a6016437",
+    "label": "Create index \"experiment_results_runId_idx_a6016437\" on \"experiment_results\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "experiment_results_runId_idx_a6016437",
+        "table": "experiment_results"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"experiment_results_runId_idx_a6016437\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_results_runId_idx_a6016437\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"experiment_results_runId_idx_a6016437\"",
+        "sql": "CREATE INDEX \"experiment_results_runId_idx_a6016437\" ON \"public\".\"experiment_results\" (\"runId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"experiment_results_runId_idx_a6016437\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_results_runId_idx_a6016437\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.experiment_runs.experiment_runs_datasetVersion_idx_40434891",
+    "label": "Create index \"experiment_runs_datasetVersion_idx_40434891\" on \"experiment_runs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "experiment_runs_datasetVersion_idx_40434891",
+        "table": "experiment_runs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"experiment_runs_datasetVersion_idx_40434891\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_runs_datasetVersion_idx_40434891\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"experiment_runs_datasetVersion_idx_40434891\"",
+        "sql": "CREATE INDEX \"experiment_runs_datasetVersion_idx_40434891\" ON \"public\".\"experiment_runs\" (\"datasetVersion\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"experiment_runs_datasetVersion_idx_40434891\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"experiment_runs_datasetVersion_idx_40434891\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.memory_edges.memory_edges_sourceMemoryId_idx_bf0fa4d7",
+    "label": "Create index \"memory_edges_sourceMemoryId_idx_bf0fa4d7\" on \"memory_edges\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "memory_edges_sourceMemoryId_idx_bf0fa4d7",
+        "table": "memory_edges"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"memory_edges_sourceMemoryId_idx_bf0fa4d7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_edges_sourceMemoryId_idx_bf0fa4d7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"memory_edges_sourceMemoryId_idx_bf0fa4d7\"",
+        "sql": "CREATE INDEX \"memory_edges_sourceMemoryId_idx_bf0fa4d7\" ON \"public\".\"memory_edges\" (\"sourceMemoryId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"memory_edges_sourceMemoryId_idx_bf0fa4d7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_edges_sourceMemoryId_idx_bf0fa4d7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.memory_edges.memory_edges_targetMemoryId_idx_99eabd88",
+    "label": "Create index \"memory_edges_targetMemoryId_idx_99eabd88\" on \"memory_edges\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "memory_edges_targetMemoryId_idx_99eabd88",
+        "table": "memory_edges"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"memory_edges_targetMemoryId_idx_99eabd88\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_edges_targetMemoryId_idx_99eabd88\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"memory_edges_targetMemoryId_idx_99eabd88\"",
+        "sql": "CREATE INDEX \"memory_edges_targetMemoryId_idx_99eabd88\" ON \"public\".\"memory_edges\" (\"targetMemoryId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"memory_edges_targetMemoryId_idx_99eabd88\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_edges_targetMemoryId_idx_99eabd88\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.memory_items.memory_items_representation_idx_26308a09",
+    "label": "Create index \"memory_items_representation_idx_26308a09\" on \"memory_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "memory_items_representation_idx_26308a09",
+        "table": "memory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"memory_items_representation_idx_26308a09\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items_representation_idx_26308a09\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"memory_items_representation_idx_26308a09\"",
+        "sql": "CREATE INDEX \"memory_items_representation_idx_26308a09\" ON \"public\".\"memory_items\" (\"representation\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"memory_items_representation_idx_26308a09\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items_representation_idx_26308a09\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.memory_items.memory_items_resourceId_idx_72964925",
+    "label": "Create index \"memory_items_resourceId_idx_72964925\" on \"memory_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "memory_items_resourceId_idx_72964925",
+        "table": "memory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"memory_items_resourceId_idx_72964925\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items_resourceId_idx_72964925\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"memory_items_resourceId_idx_72964925\"",
+        "sql": "CREATE INDEX \"memory_items_resourceId_idx_72964925\" ON \"public\".\"memory_items\" (\"resourceId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"memory_items_resourceId_idx_72964925\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items_resourceId_idx_72964925\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.memory_items.memory_items_resourceId_representation_idx_87f96ad7",
+    "label": "Create index \"memory_items_resourceId_representation_idx_87f96ad7\" on \"memory_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "memory_items_resourceId_representation_idx_87f96ad7",
+        "table": "memory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"memory_items_resourceId_representation_idx_87f96ad7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items_resourceId_representation_idx_87f96ad7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"memory_items_resourceId_representation_idx_87f96ad7\"",
+        "sql": "CREATE INDEX \"memory_items_resourceId_representation_idx_87f96ad7\" ON \"public\".\"memory_items\" (\"resourceId\", \"representation\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"memory_items_resourceId_representation_idx_87f96ad7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"memory_items_resourceId_representation_idx_87f96ad7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.resources.resources_type_idx_b6b604ea",
+    "label": "Create index \"resources_type_idx_b6b604ea\" on \"resources\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "resources_type_idx_b6b604ea",
+        "table": "resources"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"resources_type_idx_b6b604ea\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resources_type_idx_b6b604ea\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"resources_type_idx_b6b604ea\"",
+        "sql": "CREATE INDEX \"resources_type_idx_b6b604ea\" ON \"public\".\"resources\" (\"type\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"resources_type_idx_b6b604ea\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resources_type_idx_b6b604ea\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.expected_evidence.expected_evidence_questionId_fkey",
+    "label": "Add foreign key \"expected_evidence_questionId_fkey\" on \"expected_evidence\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "expected_evidence_questionId_fkey",
+        "table": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"expected_evidence_questionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_questionId_fkey",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"expected_evidence_questionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"expected_evidence\"\nADD CONSTRAINT \"expected_evidence_questionId_fkey\"\nFOREIGN KEY (\"questionId\")\nREFERENCES \"public\".\"evaluation_questions\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"expected_evidence_questionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_questionId_fkey",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.expected_evidence.expected_evidence_resourceId_fkey",
+    "label": "Add foreign key \"expected_evidence_resourceId_fkey\" on \"expected_evidence\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "expected_evidence_resourceId_fkey",
+        "table": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"expected_evidence_resourceId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_resourceId_fkey",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"expected_evidence_resourceId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"expected_evidence\"\nADD CONSTRAINT \"expected_evidence_resourceId_fkey\"\nFOREIGN KEY (\"resourceId\")\nREFERENCES \"public\".\"resources\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"expected_evidence_resourceId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_resourceId_fkey",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.expected_evidence.expected_evidence_memoryId_fkey",
+    "label": "Add foreign key \"expected_evidence_memoryId_fkey\" on \"expected_evidence\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "expected_evidence_memoryId_fkey",
+        "table": "expected_evidence"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"expected_evidence_memoryId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_memoryId_fkey",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"expected_evidence_memoryId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"expected_evidence\"\nADD CONSTRAINT \"expected_evidence_memoryId_fkey\"\nFOREIGN KEY (\"memoryId\")\nREFERENCES \"public\".\"memory_items\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"expected_evidence_memoryId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "expected_evidence_memoryId_fkey",
+          "public",
+          "\"public\".\"expected_evidence\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.experiment_results.experiment_results_runId_fkey",
+    "label": "Add foreign key \"experiment_results_runId_fkey\" on \"experiment_results\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "experiment_results_runId_fkey",
+        "table": "experiment_results"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"experiment_results_runId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "experiment_results_runId_fkey",
+          "public",
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"experiment_results_runId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"experiment_results\"\nADD CONSTRAINT \"experiment_results_runId_fkey\"\nFOREIGN KEY (\"runId\")\nREFERENCES \"public\".\"experiment_runs\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"experiment_results_runId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "experiment_results_runId_fkey",
+          "public",
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.experiment_results.experiment_results_questionId_fkey",
+    "label": "Add foreign key \"experiment_results_questionId_fkey\" on \"experiment_results\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "experiment_results_questionId_fkey",
+        "table": "experiment_results"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"experiment_results_questionId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "experiment_results_questionId_fkey",
+          "public",
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"experiment_results_questionId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"experiment_results\"\nADD CONSTRAINT \"experiment_results_questionId_fkey\"\nFOREIGN KEY (\"questionId\")\nREFERENCES \"public\".\"evaluation_questions\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"experiment_results_questionId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "experiment_results_questionId_fkey",
+          "public",
+          "\"public\".\"experiment_results\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.memory_edges.memory_edges_sourceMemoryId_fkey",
+    "label": "Add foreign key \"memory_edges_sourceMemoryId_fkey\" on \"memory_edges\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "memory_edges_sourceMemoryId_fkey",
+        "table": "memory_edges"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"memory_edges_sourceMemoryId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_edges_sourceMemoryId_fkey",
+          "public",
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"memory_edges_sourceMemoryId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"memory_edges\"\nADD CONSTRAINT \"memory_edges_sourceMemoryId_fkey\"\nFOREIGN KEY (\"sourceMemoryId\")\nREFERENCES \"public\".\"memory_items\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"memory_edges_sourceMemoryId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_edges_sourceMemoryId_fkey",
+          "public",
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.memory_edges.memory_edges_targetMemoryId_fkey",
+    "label": "Add foreign key \"memory_edges_targetMemoryId_fkey\" on \"memory_edges\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "memory_edges_targetMemoryId_fkey",
+        "table": "memory_edges"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"memory_edges_targetMemoryId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_edges_targetMemoryId_fkey",
+          "public",
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"memory_edges_targetMemoryId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"memory_edges\"\nADD CONSTRAINT \"memory_edges_targetMemoryId_fkey\"\nFOREIGN KEY (\"targetMemoryId\")\nREFERENCES \"public\".\"memory_items\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"memory_edges_targetMemoryId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_edges_targetMemoryId_fkey",
+          "public",
+          "\"public\".\"memory_edges\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.memory_items.memory_items_resourceId_fkey",
+    "label": "Add foreign key \"memory_items_resourceId_fkey\" on \"memory_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "memory_items_resourceId_fkey",
+        "table": "memory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"memory_items_resourceId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_items_resourceId_fkey",
+          "public",
+          "\"public\".\"memory_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"memory_items_resourceId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"memory_items\"\nADD CONSTRAINT \"memory_items_resourceId_fkey\"\nFOREIGN KEY (\"resourceId\")\nREFERENCES \"public\".\"resources\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"memory_items_resourceId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_items_resourceId_fkey",
+          "public",
+          "\"public\".\"memory_items\""
+        ]
+      }
+    ]
+  }
+]
