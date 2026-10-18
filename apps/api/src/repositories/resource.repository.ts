@@ -29,6 +29,7 @@ export const resourceRepository: ResourceRepository = {
 
   async create(input: PersistResourceInput): Promise<ResourceRecord> {
     const resource = await db.orm.public.Resource.create({
+      id: input.id,
       title: input.title,
       type: input.type,
       sourceUrl: input.sourceUrl ?? null,

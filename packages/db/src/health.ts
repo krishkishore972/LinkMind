@@ -5,12 +5,21 @@ export type DatabaseHealth = {
   pgvector: boolean;
 };
 
-type HealthRow = {
+export type HealthRow = {
   connected: number;
   vectorInstalled: boolean;
 };
 
-export async function checkDatabaseHealth(): Promise<DatabaseHealth> {
+export type HealthRowQuery = () => Promise<HealthRow | undefined>;
+
+export function toDatabaseHealth(row: HealthRow | undefined): DatabaseHealth {
+  return {
+    database: row?.connected === 1,
+    pgvector: row?.vectorInstalled === true,
+  };
+}
+
+async function queryHealthRow(): Promise<HealthRow | undefined> {
   const plan = db.raw.sql`
     SELECT
       1 AS "connected",
@@ -27,9 +36,16 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealth> {
     .build();
 
   const [row] = await db.runtime().query<HealthRow>(plan);
+  return row;
+}
 
-  return {
-    database: row?.connected === 1,
-    pgvector: row?.vectorInstalled === true,
-  };
+/**
+ * Reports whether the database is reachable and the pgvector extension is
+ * installed. The row query is injectable so the mapping can be tested without
+ * a live database.
+ */
+export async function checkDatabaseHealth(
+  query: HealthRowQuery = queryHealthRow,
+): Promise<DatabaseHealth> {
+  return toDatabaseHealth(await query());
 }

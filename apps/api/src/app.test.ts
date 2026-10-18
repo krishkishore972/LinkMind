@@ -60,7 +60,7 @@ describe('POST /api/query', () => {
       .send({ query: 'database', limit: 3 });
 
     expect(response.status).toBe(200);
-    expect(response.body.configuration).toBe('E1_BM25_RAW');
+    expect(response.body.configuration).toBe('E1');
     expect(response.body.results[0]).toMatchObject({
       memoryId: 'memory-1',
       rank: 1,

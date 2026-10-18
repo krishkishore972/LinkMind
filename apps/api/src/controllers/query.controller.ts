@@ -1,6 +1,9 @@
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import type { RetrievalService } from '../services/retrieval.service.js';
+import type { RetrievalConfiguration } from '../types/search.js';
+
+const E1_BM25_RAW: RetrievalConfiguration = 'E1';
 
 const querySchema = z.object({
   query: z.string().trim().min(1).max(1000),
@@ -23,7 +26,7 @@ export class QueryController {
     try {
       const results = await this.service.search(parsed.data);
       response.status(200).json({
-        configuration: 'E1_BM25_RAW',
+        configuration: E1_BM25_RAW,
         results,
       });
     } catch {

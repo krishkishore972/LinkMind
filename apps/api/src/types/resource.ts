@@ -31,4 +31,5 @@ export type CreateResourceInput = {
 
 export type PersistResourceInput = CreateResourceInput & {
   contentHash: string;
+  id?: string;
 };

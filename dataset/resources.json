@@ -1,0 +1,145 @@
+{
+  "version": "1.0",
+  "resources": [
+    {
+      "id": "res-001",
+      "title": "Introduction to pgvector for PostgreSQL",
+      "type": "webpage",
+      "sourceUrl": "https://example.com/pgvector-intro",
+      "content": "pgvector is an open-source PostgreSQL extension that adds vector similarity search capabilities to PostgreSQL. It supports exact and approximate nearest neighbor search, making it suitable for AI applications like semantic search, recommendation systems, and retrieval-augmented generation. The extension provides a vector data type that can store embeddings with up to 16,000 dimensions. It supports both HNSW and IVFFlat index types for approximate search, with HNSW generally providing better accuracy at the cost of build time. pgvector also includes operators for cosine similarity, inner product, and L2 distance. Installation requires PostgreSQL 12 or later. The extension can be installed via CREATE EXTENSION vector; in any database. Common use cases include storing embeddings from models like text-embedding-ada-002 (1536 dimensions) or Gemini embeddings (768 or 1536 dimensions)."
+    },
+    {
+      "id": "res-002",
+      "title": "Prisma ORM with PostgreSQL extensions",
+      "type": "webpage",
+      "sourceUrl": "https://example.com/prisma-postgres-extensions",
+      "content": "Prisma ORM provides first-class support for PostgreSQL extensions including pgvector. Starting with Prisma 5.x, you can use the @prisma/extension-pgvector to work with vector columns directly in your Prisma schema. The extension adds a Vector type that maps to pgvector's vector data type. You define the vector dimension in your schema like @db.Vector(1536). Prisma Client then provides type-safe operations for storing and querying vectors. For raw SQL operations, you can use $queryRaw and $executeRaw with parameterized queries to leverage pgvector's similarity operators like <=> for cosine distance. The integration supports both the schema-driven workflow and the migration-based workflow. When using migrations, you need to ensure the vector extension is installed in the database before running migrations that reference the vector type."
+    },
+    {
+      "id": "res-003",
+      "title": "BM25 ranking algorithm explained",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://example.com/bm25-paper",
+      "content": "BM25 is a probabilistic ranking function used by search engines to estimate the relevance of documents to a given query. It improves upon the classic TF-IDF by incorporating document length normalization and term frequency saturation. The formula uses two key parameters: k1 controls term frequency saturation (typically 1.2) and b controls document length normalization (typically 0.75). BM25 computes a score for each document-query pair based on the inverse document frequency of query terms, their frequency in the document, and the document length relative to the average. Unlike pure TF-IDF, BM25 does not monotonically increase with term frequency; instead, it approaches an asymptote, preventing keyword stuffing from artificially inflating scores. BM25 remains a strong baseline for lexical search and is the default ranking function in Elasticsearch, OpenSearch, and many other search platforms."
+    },
+    {
+      "id": "res-004",
+      "title": "Gemini embedding models and dimensions",
+      "type": "webpage",
+      "sourceUrl": "https://example.com/gemini-embeddings",
+      "content": "Google's Gemini embedding models provide dense vector representations of text for semantic search and similarity tasks. The text-embedding-004 model produces 768-dimensional vectors, while text-embedding-004-1536 produces 1536-dimensional vectors. Both models support input lengths up to 2048 tokens. The 1536-dimensional variant offers higher resolution for distinguishing similar texts but requires more storage and computation. Embeddings are generated via the Gemini API with a simple REST call. The API returns normalized vectors suitable for cosine similarity. Pricing is per million tokens of input. For production workloads, consider batching requests and caching embeddings to reduce latency and cost. The model version and dimensions must be consistent between indexing and query time to ensure correct similarity comparisons."
+    },
+    {
+      "id": "res-005",
+      "title": "Structured fact extraction for long-term memory",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://example.com/fact-extraction-paper",
+      "content": "Structured fact extraction transforms unstructured text into atomic, verifiable propositions linked to source evidence. Each fact consists of a subject, predicate, and object triple, optionally with qualifiers like temporal validity or confidence. Unlike summaries, facts preserve granular provenance — each fact traces back to a specific passage in the source document. This enables fine-grained retrieval where a query about a specific claim can return the exact supporting evidence. Fact extraction pipelines typically involve entity recognition, relation extraction, and canonicalization. For personal knowledge management, facts can be curated or verified by the user, creating a trusted knowledge base. Graph-linked facts add explicit typed edges between related facts (e.g., supports, contradicts, same_entity), enabling multi-hop reasoning over the knowledge graph."
+    },
+    {
+      "id": "res-006",
+      "title": "Graph-based retrieval over personal knowledge",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://example.com/graph-retrieval-paper",
+      "content": "Graph-based retrieval enhances vector search by expanding initial candidates through explicit relationships in a knowledge graph. The process starts with vector similarity search to find seed facts, then follows typed edges to discover related facts that may not be semantically similar but are logically connected. Key parameters include hop count (typically 1-2), edge types to traverse, and deduplication strategy. Expansion can improve recall for complex queries requiring multi-step reasoning, such as 'What technologies does Project Alpha use?' where the answer spans multiple resources linked by shared entities. However, unbounded expansion introduces noise and latency. Bounded expansion with a documented policy — initial top-K candidates, single-hop traversal, deduplication by fact ID, and reranking — provides a reproducible baseline. Provenance tracking ensures each retrieved fact maintains its source evidence chain."
+    },
+    {
+      "id": "res-007",
+      "title": "LinkMind project overview",
+      "type": "note",
+      "sourceUrl": null,
+      "content": "LinkMind is a research prototype exploring how heterogeneous personal digital resources become source-grounded long-term memory for AI systems. The system accepts text from webpages, YouTube transcripts, GitHub READMEs, research papers, and personal notes. It builds four memory representations: raw-content chunks, summaries, structured facts, and graph-linked facts. Retrieval compares five configurations: E1 BM25 over raw chunks, E2 vector search over raw chunks, E3 vector search over summaries, E4 vector search over structured facts, E5 vector search over facts with graph expansion. The evaluation uses a fixed dataset of ~20 resources and 30 questions with gold-standard expected evidence. Metrics include Recall@3, MRR, evidence correctness, and retrieval latency. The core workflow must work without LLM generation APIs — BM25, fixture-based memory, and retrieval metrics run offline."
+    },
+    {
+      "id": "res-008",
+      "title": "YouTube transcript: Introduction to Vector Databases",
+      "type": "youtube_transcript",
+      "sourceUrl": "https://youtube.com/watch?v=vector-db-intro",
+      "content": "Welcome to this introduction to vector databases. Vector databases are specialized databases designed to store and query high-dimensional vectors, also known as embeddings. These embeddings are numerical representations of data like text, images, or audio generated by machine learning models. Traditional databases use exact matching or range queries, but vector databases use similarity search — finding vectors closest to a query vector. Common distance metrics include cosine similarity, Euclidean distance, and dot product. Popular vector databases include Pinecone, Weaviate, Qdrant, Milvus, and pgvector as a PostgreSQL extension. Vector databases power semantic search, recommendation engines, anomaly detection, and retrieval-augmented generation (RAG) systems. In RAG, relevant documents are retrieved by embedding similarity and fed to an LLM for answer generation."
+    },
+    {
+      "id": "res-009",
+      "title": "GitHub README: pgvector-extension",
+      "type": "github_readme",
+      "sourceUrl": "https://github.com/pgvector/pgvector",
+      "content": "pgvector is a PostgreSQL extension for vector similarity search. It adds a vector data type, vector operators, and index support for approximate nearest neighbor search. Features: exact and approximate nearest neighbor search, L2 distance, inner product, and cosine distance operators, HNSW and IVFFlat indexes, support for vectors up to 16,000 dimensions, works with any PostgreSQL client. Installation: CREATE EXTENSION vector; Usage: CREATE TABLE items (id bigserial PRIMARY KEY, embedding vector(3)); INSERT INTO items (embedding) VALUES ('[1,2,3]'), ('[4,5,6]'); SELECT * FROM items ORDER BY embedding <-> '[3,1,2]' LIMIT 5; For HNSW index: CREATE INDEX ON items USING hnsw (embedding vector_cosine_ops); For IVFFlat index: CREATE INDEX ON items USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100); The project is MIT licensed and actively maintained."
+    },
+    {
+      "id": "res-010",
+      "title": "Research paper: Dense Passage Retrieval for Open-Domain QA",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://arxiv.org/abs/2004.04906",
+      "content": "Dense Passage Retrieval (DPR) uses dual encoders to embed questions and passages into a shared dense vector space where relevance corresponds to vector similarity. The question encoder and passage encoder are trained jointly using contrastive learning with in-batch negatives and hard negatives from BM25. DPR outperforms sparse retrieval methods like BM25 on multiple open-domain QA benchmarks. Key findings: dense retrieval captures semantic matching beyond lexical overlap; hard negative mining significantly improves performance; the passage encoder can be reused across tasks. The training uses a batch size of 128 with 1 positive and 127 negatives per query. Passage embeddings are precomputed and indexed with FAISS for efficient search. At inference, the question is encoded and the top-k passages are retrieved by maximum inner product search. DPR demonstrates that learned dense representations can surpass carefully tuned sparse baselines."
+    },
+    {
+      "id": "res-011",
+      "title": "Personal note: Meeting with database team",
+      "type": "note",
+      "sourceUrl": null,
+      "content": "Met with the database team on 2026-01-15 to discuss pgvector integration for LinkMind. Key decisions: use Prisma ORM with @prisma/extension-pgvector for type-safe vector operations; embedding dimension 1536 to match Gemini text-embedding-004-1536; exact vector search for MVP (no approximate indexes yet); parameterized raw SQL for pgvector queries in a dedicated vector repository; keep embedding model and dimension in configuration, not hardcoded. Action items: create migration for pgvector extension, add vector column to memory_items table, implement vector repository with save/search methods, add fake embedding provider for tests. The team agreed that BM25 baseline must work completely offline for reproducible tests."
+    },
+    {
+      "id": "res-012",
+      "title": "Evaluation methodology for memory retrieval systems",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://example.com/eval-methodology-paper",
+      "content": "Rigorous evaluation of memory retrieval systems requires fixed datasets, reproducible configurations, and transparent metrics. The dataset should contain diverse resource types and question categories: direct factual recall, resource identification, cross-resource reasoning, temporal questions, and unanswerable questions. For each answerable question, gold-standard expected evidence must be defined before running experiments — this includes specific resource IDs and supporting passages. Metrics: Recall@k measures the fraction of expected relevant resources retrieved in the top-k results; MRR (Mean Reciprocal Rank) averages the reciprocal rank of the first relevant result across questions; evidence correctness is a manual audit of whether retrieved passages actually support the answer; latency measures end-to-end retrieval time consistently. Experiments must record configuration details: embedding model, dimensions, preprocessing, retrieval budget (top-k), graph expansion policy. Results should be persisted per-question with aggregate metrics computed from raw observations. CSV export enables external analysis. Never tune configurations on the test set after inspecting results."
+    },
+    {
+      "id": "res-013",
+      "title": "YouTube transcript: Building RAG Systems with pgvector",
+      "type": "youtube_transcript",
+      "sourceUrl": "https://youtube.com/watch?v=rag-pgvector",
+      "content": "In this video we build a retrieval-augmented generation system using pgvector and PostgreSQL. First, we install the pgvector extension in our database. Then we create a table to store document chunks with their embeddings. We use the text-embedding-ada-002 model from OpenAI to generate 1536-dimensional embeddings for each chunk. The embedding is stored in a vector(1536) column. For retrieval, we embed the user's question and use the cosine distance operator (<=>) to find the most similar chunks. We then construct a prompt with the retrieved chunks as context and send it to GPT-4 for answer generation. Important: always use parameterized queries to prevent SQL injection when working with vector operations. For production, consider adding an HNSW index for faster approximate search. The HNSW index build time increases with data size but query latency stays low. Remember to re-index after significant data changes."
+    },
+    {
+      "id": "res-014",
+      "title": "GitHub README: prisma-pgvector-example",
+      "type": "github_readme",
+      "sourceUrl": "https://github.com/example/prisma-pgvector-example",
+      "content": "This example shows how to use Prisma ORM with pgvector for vector similarity search. Prerequisites: PostgreSQL 15+ with pgvector extension, Node.js 18+, pnpm. Setup: pnpm install, pnpm prisma generate, pnpm prisma migrate dev. Schema: model Document { id String @id @default(uuid()); content String; embedding Unsupported(\"vector(1536)\") @@index([embedding], type: Vector) } Note: Prisma 5.x uses the @prisma/extension-pgvector package. The Vector type is imported from the extension. For raw vector operations, use $queryRaw with parameterized queries: const results = await prisma.$queryRaw`SELECT * FROM Document ORDER BY embedding <=> ${vector}::vector LIMIT 5`; The example includes a script to seed sample documents with embeddings and a query script to demonstrate similarity search."
+    },
+    {
+      "id": "res-015",
+      "title": "Research paper: Graph Neural Networks for Knowledge Graph Completion",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://arxiv.org/abs/1911.07314",
+      "content": "Graph Neural Networks (GNNs) have shown strong performance on knowledge graph completion tasks by learning representations of entities and relations that generalize to unseen triples. The key insight is that entity representations should aggregate information from their neighborhood in the graph. Models like R-GCN (Relational Graph Convolutional Networks) and CompGCN (Composition-based Graph Convolutional Networks) handle multi-relational graphs by learning relation-specific transformations. For link prediction, the score of a candidate triple (h, r, t) is computed from the learned representations. In the context of personal knowledge graphs, GNNs could infer missing edges between fact nodes based on structural patterns. However, GNNs require training data and introduce complexity. For the LinkMind MVP, explicit graph edges with bounded expansion provide a transparent, deterministic alternative that doesn't require model training and keeps provenance clear."
+    },
+    {
+      "id": "res-016",
+      "title": "Personal note: Chunking strategy for mixed content",
+      "type": "note",
+      "sourceUrl": null,
+      "content": "Experimented with chunking strategies for mixed content types in LinkMind. Webpages and papers benefit from larger chunks (1000-1500 chars) with 150-200 char overlap to preserve context across paragraphs. YouTube transcripts have natural sentence boundaries — chunking at sentence boundaries with a max of 1000 chars works better than fixed overlap. GitHub READMEs have structured sections — chunking by heading hierarchy preserves semantic units. Personal notes are often short — may not need chunking at all. The current default: 1000 chars max, 150 chars overlap, whitespace-normalized with source offset mapping. This preserves evidence provenance: each chunk records the exact original text span it came from. Future improvement: content-type-aware chunking with configurable strategies per resource type."
+    },
+    {
+      "id": "res-017",
+      "title": "Research paper: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://arxiv.org/abs/2005.11401",
+      "content": "Retrieval-Augmented Generation (RAG) combines parametric knowledge from a pre-trained language model with non-parametric knowledge from an external retrieval system. The retriever fetches relevant documents for a query, and the generator conditions on both the query and retrieved documents. RAG uses a dense passage retriever (DPR) initialized from a pre-trained BERT model. The generator is a pre-trained sequence-to-sequence model (BART). Training optimizes the marginal likelihood of the answer given the query by marginalizing over retrieved documents. RAG outperforms purely parametric models on knowledge-intensive tasks like open-domain QA, fact verification, and entity linking. Key advantage: the external knowledge can be updated without retraining the model. For personal knowledge management, RAG enables querying a dynamic corpus of personal documents. The retrieval component can use BM25, dense vectors, or hybrid approaches. The generator must be grounded in retrieved evidence and abstain when evidence is insufficient."
+    },
+    {
+      "id": "res-018",
+      "title": "Webpage: PostgreSQL 16 new features for AI workloads",
+      "type": "webpage",
+      "sourceUrl": "https://example.com/postgres16-ai",
+      "content": "PostgreSQL 16 introduces several features beneficial for AI and vector workloads. Parallel query execution now works with more query types, speeding up vector similarity searches over large tables. The planner has improved cost estimation for custom scan providers like pgvector's HNSW and IVFFlat indexes. Logical replication enhancements support replicating vector columns. The new pg_stat_io view provides I/O statistics to monitor vector index performance. Memory management improvements reduce overhead for large vector operations. For pgvector specifically, PostgreSQL 16's improved parallelism means HNSW index builds can utilize multiple cores. The query planner can now choose parallel index scans for vector similarity queries when the table is large enough. These improvements make PostgreSQL with pgvector a more viable option for production vector workloads without a separate vector database."
+    },
+    {
+      "id": "res-019",
+      "title": "YouTube transcript: Prisma ORM deep dive",
+      "type": "youtube_transcript",
+      "sourceUrl": "https://youtube.com/watch?v=prisma-deep-dive",
+      "content": "Prisma ORM is a next-generation ORM for Node.js and TypeScript. It provides type-safe database access with auto-completion and compile-time checks. The Prisma schema is the single source of truth for your database models. Prisma Client is generated from the schema and provides a fluent API for queries. Prisma Migrate handles schema migrations with a declarative approach. For PostgreSQL extensions like pgvector, Prisma 5.x introduces the @prisma/extension-pgvector package. This extension adds a Vector type to your schema and provides type-safe vector operations in Prisma Client. You can define a vector field as: embedding Vector @db.Vector(1536). Prisma Client then supports create, update, and find operations on vector fields. For similarity search, you still use $queryRaw with pgvector operators since Prisma doesn't yet have a built-in similarity query API. The extension handles serialization and deserialization of vector data automatically."
+    },
+    {
+      "id": "res-020",
+      "title": "Research paper: Hybrid lexical and dense retrieval",
+      "type": "paper_excerpt",
+      "sourceUrl": "https://arxiv.org/abs/2101.08143",
+      "content": "Hybrid retrieval combines lexical (BM25) and dense (vector) search to leverage the strengths of both. Lexical search excels at exact term matching, rare terms, and out-of-domain queries. Dense search excels at semantic matching, synonymy, and paraphrase tolerance. Common hybrid approaches: score fusion (reciprocal rank fusion, weighted score combination), cascade (lexical filter then dense rerank, or vice versa), and learned fusion (train a model to combine scores). The paper finds that simple reciprocal rank fusion (RRF) often matches or exceeds learned fusion while being parameter-free. RRF combines ranked lists by summing 1 / (k + rank) for each result across systems, with k=60 as default. For evaluation, hybrid systems should be compared against both pure lexical and pure dense baselines on the same queries. The paper recommends reporting results on both in-domain and out-of-domain test sets to assess generalization."
+    }
+  ]
+}

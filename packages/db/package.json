@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "contract:emit": "prisma contract emit"
   },
   "keywords": [],
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "26.4.1",
-    "prisma": "8.0.0-rc.23"
+    "prisma": "8.0.0-rc.23",
+    "vitest": "^5.0.4"
   }
 }

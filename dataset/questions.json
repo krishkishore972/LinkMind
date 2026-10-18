@@ -1,0 +1,505 @@
+{
+  "version": "1.0",
+  "datasetVersion": "v1.0",
+  "questions": [
+    {
+      "id": "q-001",
+      "question": "What is pgvector and what does it add to PostgreSQL?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "pgvector is a PostgreSQL extension that adds vector similarity search capabilities, including a vector data type, similarity operators, and HNSW/IVFFlat indexes for approximate nearest neighbor search.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-001",
+          "evidence": "pgvector is an open-source PostgreSQL extension that adds vector similarity search capabilities to PostgreSQL. It supports exact and approximate nearest neighbor search, making it suitable for AI applications like semantic search, recommendation systems, and retrieval-augmented generation. The extension provides a vector data type that can store embeddings with up to 16,000 dimensions.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-009",
+          "evidence": "pgvector is a PostgreSQL extension for vector similarity search. It adds a vector data type, vector operators, and index support for approximate nearest neighbor search.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-002",
+      "question": "What are the default BM25 parameters k1 and b?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The default BM25 parameters are k1=1.2 for term frequency saturation and b=0.75 for document length normalization.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-003",
+          "evidence": "The formula uses two key parameters: k1 controls term frequency saturation (typically 1.2) and b controls document length normalization (typically 0.75).",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-003",
+      "question": "What embedding dimensions does Gemini text-embedding-004-1536 produce?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "1536 dimensions",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-004",
+          "evidence": "The text-embedding-004 model produces 768-dimensional vectors, while text-embedding-004-1536 produces 1536-dimensional vectors.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-011",
+          "evidence": "embedding dimension 1536 to match Gemini text-embedding-004-1536",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-004",
+      "question": "How does structured fact extraction differ from summarization?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "Structured fact extraction produces atomic, verifiable propositions (subject-predicate-object triples) with granular provenance to specific source passages, while summaries produce condensed narrative text.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-005",
+          "evidence": "Structured fact extraction transforms unstructured text into atomic, verifiable propositions linked to source evidence. Each fact consists of a subject, predicate, and object triple, optionally with qualifiers like temporal validity or confidence. Unlike summaries, facts preserve granular provenance — each fact traces back to a specific passage in the source document.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-005",
+      "question": "What is the purpose of graph expansion in retrieval?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "Graph expansion follows typed edges from seed facts to discover logically connected facts that may not be semantically similar, improving recall for multi-step reasoning queries.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-006",
+          "evidence": "Graph-based retrieval enhances vector search by expanding initial candidates through explicit relationships in a knowledge graph. The process starts with vector similarity search to find seed facts, then follows typed edges to discover related facts that may not be semantically similar but are logically connected.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-006",
+      "question": "What are the five retrieval configurations compared in LinkMind?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "E1: BM25 over raw chunks; E2: vector search over raw chunks; E3: vector search over summaries; E4: vector search over structured facts; E5: vector search over facts with graph expansion.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-007",
+          "evidence": "Retrieval compares five configurations: E1 BM25 over raw chunks, E2 vector search over raw chunks, E3 vector search over summaries, E4 vector search over structured facts, E5 vector search over facts with graph expansion.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-007",
+      "question": "What distance metrics does pgvector support?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "pgvector supports L2 distance, inner product, and cosine distance operators.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-001",
+          "evidence": "pgvector also includes operators for cosine similarity, inner product, and L2 distance.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-009",
+          "evidence": "L2 distance, inner product, and cosine distance operators",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-008",
+      "question": "What is the default chunking configuration in LinkMind?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "1000 characters maximum with 150 characters overlap, using whitespace normalization with source offset mapping.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-016",
+          "evidence": "The current default: 1000 chars max, 150 chars overlap, whitespace-normalized with source offset mapping.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-009",
+      "question": "Which resources discuss the Prisma pgvector integration?",
+      "category": "resource_identification",
+      "answerability": "answerable",
+      "expectedAnswer": "Resources res-002, res-014, and res-019 discuss Prisma pgvector integration.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-002",
+          "evidence": "Prisma ORM provides first-class support for PostgreSQL extensions including pgvector. Starting with Prisma 5.x, you can use the @prisma/extension-pgvector to work with vector columns directly in your Prisma schema.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-014",
+          "evidence": "This example shows how to use Prisma ORM with pgvector for vector similarity search. Prerequisites: PostgreSQL 15+ with pgvector extension, Node.js 18+, pnpm.",
+          "isPrimary": false
+        },
+        {
+          "resourceId": "res-019",
+          "evidence": "For PostgreSQL extensions like pgvector, Prisma 5.x introduces the @prisma/extension-pgvector package. This extension adds a Vector type to your schema and provides type-safe vector operations in Prisma Client.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-010",
+      "question": "What are the key findings of the Dense Passage Retrieval (DPR) paper?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "DPR uses dual encoders trained with contrastive learning; it outperforms BM25 on open-domain QA; dense retrieval captures semantic matching beyond lexical overlap; hard negative mining significantly improves performance.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-010",
+          "evidence": "DPR outperforms sparse retrieval methods like BM25 on multiple open-domain QA benchmarks. Key findings: dense retrieval captures semantic matching beyond lexical overlap; hard negative mining significantly improves performance; the passage encoder can be reused across tasks.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-011",
+      "question": "What was decided about vector indexes in the LinkMind database team meeting?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The team decided to use exact vector search for the MVP (no approximate indexes like HNSW or IVFFlat yet).",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-011",
+          "evidence": "exact vector search for MVP (no approximate indexes yet)",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-012",
+      "question": "What evaluation metrics does LinkMind use?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "LinkMind uses Recall@3, MRR (Mean Reciprocal Rank), evidence correctness (manual audit), and retrieval latency.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-007",
+          "evidence": "Metrics include Recall@3, MRR, evidence correctness, and retrieval latency.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-012",
+          "evidence": "Metrics: Recall@k measures the fraction of expected relevant resources retrieved in the top-k results; MRR (Mean Reciprocal Rank) averages the reciprocal rank of the first relevant result across questions; evidence correctness is a manual audit of whether retrieved passages actually support the answer; latency measures end-to-end retrieval time consistently.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-013",
+      "question": "What is reciprocal rank fusion (RRF) in hybrid retrieval?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "RRF combines ranked lists from multiple retrieval systems by summing 1 / (k + rank) for each result across systems, with k=60 as default, providing a parameter-free fusion method.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-020",
+          "evidence": "The paper finds that simple reciprocal rank fusion (RRF) often matches or exceeds learned fusion while being parameter-free. RRF combines ranked lists by summing 1 / (k + rank) for each result across systems, with k=60 as default.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-014",
+      "question": "Which resources mention HNSW indexes for pgvector?",
+      "category": "resource_identification",
+      "answerability": "answerable",
+      "expectedAnswer": "Resources res-001, res-009, and res-018 mention HNSW indexes for pgvector.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-001",
+          "evidence": "It supports both HNSW and IVFFlat index types for approximate search, with HNSW generally providing better accuracy at the cost of build time.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-009",
+          "evidence": "For HNSW index: CREATE INDEX ON items USING hnsw (embedding vector_cosine_ops);",
+          "isPrimary": false
+        },
+        {
+          "resourceId": "res-018",
+          "evidence": "PostgreSQL 16's improved parallelism means HNSW index builds can utilize multiple cores.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-015",
+      "question": "What is the Retrieval-Augmented Generation (RAG) architecture?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "RAG combines a retriever that fetches relevant documents with a generator that conditions on both the query and retrieved documents to produce answers grounded in external knowledge.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-017",
+          "evidence": "Retrieval-Augmented Generation (RAG) combines parametric knowledge from a pre-trained language model with non-parametric knowledge from an external retrieval system. The retriever fetches relevant documents for a query, and the generator conditions on both the query and retrieved documents.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-008",
+          "evidence": "Vector databases power semantic search, recommendation engines, anomaly detection, and retrieval-augmented generation (RAG) systems. In RAG, relevant documents are retrieved by embedding similarity and fed to an LLM for answer generation.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-016",
+      "question": "What chunking strategy works best for YouTube transcripts?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "Chunking at sentence boundaries with a maximum of 1000 characters works better than fixed overlap for YouTube transcripts.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-016",
+          "evidence": "YouTube transcripts have natural sentence boundaries — chunking at sentence boundaries with a max of 1000 chars works better than fixed overlap.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-017",
+      "question": "What PostgreSQL 16 features benefit pgvector workloads?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "PostgreSQL 16 improves parallel query execution for vector similarity searches, enhances planner cost estimation for HNSW/IVFFlat indexes, supports logical replication of vector columns, and adds pg_stat_io for monitoring vector index performance.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-018",
+          "evidence": "PostgreSQL 16 introduces several features beneficial for AI and vector workloads. Parallel query execution now works with more query types, speeding up vector similarity searches over large tables. The planner has improved cost estimation for custom scan providers like pgvector's HNSW and IVFFlat indexes. Logical replication enhancements support replicating vector columns. The new pg_stat_io view provides I/O statistics to monitor vector index performance.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-018",
+      "question": "How does LinkMind ensure evidence provenance in chunking?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "LinkMind's chunker preserves evidence provenance by recording the exact original text span (evidenceText, evidenceStart, evidenceEnd) for each normalized chunk through source offset mapping.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-016",
+          "evidence": "This preserves evidence provenance: each chunk records the exact original text span it came from.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-007",
+          "evidence": "Preserve source offsets or evidence text so results can be traced to the original content.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-019",
+      "question": "What is the difference between E1 and E2 retrieval configurations?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "E1 uses BM25 lexical search over raw chunks; E2 uses pgvector semantic search over the same raw chunks. The comparison isolates the retrieval method change.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-007",
+          "evidence": "E1 BM25 over raw chunks, E2 vector search over raw chunks",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-020",
+      "question": "What resources discuss the Gemini embedding API?",
+      "category": "resource_identification",
+      "answerability": "answerable",
+      "expectedAnswer": "Resources res-004 and res-011 discuss the Gemini embedding API and its use in LinkMind.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-004",
+          "evidence": "Google's Gemini embedding models provide dense vector representations of text for semantic search and similarity tasks. The text-embedding-004 model produces 768-dimensional vectors, while text-embedding-004-1536 produces 1536-dimensional vectors.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-011",
+          "evidence": "embedding dimension 1536 to match Gemini text-embedding-004-1536",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-021",
+      "question": "What is the role of the vector repository in LinkMind architecture?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The vector repository isolates pgvector-specific SQL operations (parameterized raw queries for saving and searching embeddings) behind a clean interface, keeping vector logic separate from business logic.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-011",
+          "evidence": "parameterized raw SQL for pgvector queries in a dedicated vector repository",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-007",
+          "evidence": "Isolate custom vector operations in one repository/module. Do not scatter $queryRaw/$executeRaw calls through routes or UI-facing services.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-022",
+      "question": "What is the maximum vector dimension supported by pgvector?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "pgvector supports vectors up to 16,000 dimensions.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-001",
+          "evidence": "The extension provides a vector data type that can store embeddings with up to 16,000 dimensions.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-009",
+          "evidence": "support for vectors up to 16,000 dimensions",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-023",
+      "question": "What are the question categories in the LinkMind evaluation dataset?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The categories are: direct_fact, resource_identification, cross_resource, temporal, and unanswerable.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-012",
+          "evidence": "The dataset should contain diverse resource types and question categories: direct factual recall, resource identification, cross-resource reasoning, temporal questions, and unanswerable questions.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-024",
+      "question": "What does the LinkMind evaluation dataset contain?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The evaluation dataset contains approximately 20 synthetic/permissioned resources and 30 manually checked questions across webpages, transcripts, GitHub READMEs, paper excerpts, and synthetic notes.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-007",
+          "evidence": "The evaluation uses a fixed dataset of ~20 resources and 30 questions with gold-standard expected evidence.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-012",
+          "evidence": "The planned pilot target is approximately 20 resources and 30 manually checked questions across webpages, transcript excerpts, GitHub READMEs, paper excerpts, and synthetic notes.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-025",
+      "question": "How does DPR training use in-batch negatives?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "DPR training uses a batch size of 128 with 1 positive and 127 negatives per query, where other passages in the batch serve as in-batch negatives for contrastive learning.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-010",
+          "evidence": "The question encoder and passage encoder are trained jointly using contrastive learning with in-batch negatives and hard negatives from BM25. The training uses a batch size of 128 with 1 positive and 127 negatives per query.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-026",
+      "question": "What are the relation types in LinkMind's graph-linked memory?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The relation types are: related_to, supports, contradicts, derived_from, and same_entity.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-005",
+          "evidence": "Graph-linked facts add explicit typed edges between related facts (e.g., supports, contradicts, same_entity), enabling multi-hop reasoning over the knowledge graph.",
+          "isPrimary": true
+        }
+      ]
+    },
+    {
+      "id": "q-027",
+      "question": "What is the LinkMind policy on LLM generation APIs for the core workflow?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The core workflow (BM25, fixture-based memory, retrieval metrics) must work without LLM generation APIs. LLM-based summary generation, fact suggestions, or answer synthesis are optional enhancements.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-007",
+          "evidence": "The core workflow must work without LLM generation APIs — BM25, fixture-based memory, and retrieval metrics run offline.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-007",
+          "evidence": "LLM-based summary generation, fact suggestions, or answer synthesis are optional enhancements, not a runtime requirement for the demo.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-028",
+      "question": "What is the purpose of the chunkIndex field in memory items?",
+      "category": "direct_fact",
+      "answerability": "answerable",
+      "expectedAnswer": "The chunkIndex field provides a unique identifier for each chunk within a resource, enabling idempotent replacement of raw chunks during memory rebuilds.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-011",
+          "evidence": "add vector column to memory_items table",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-029",
+      "question": "Which resources mention the Ivfflat index for pgvector?",
+      "category": "resource_identification",
+      "answerability": "answerable",
+      "expectedAnswer": "Resources res-001, res-009, and res-018 mention IVFFlat indexes for pgvector.",
+      "expectedEvidence": [
+        {
+          "resourceId": "res-001",
+          "evidence": "It supports both HNSW and IVFFlat index types for approximate search, with HNSW generally providing better accuracy at the cost of build time.",
+          "isPrimary": true
+        },
+        {
+          "resourceId": "res-009",
+          "evidence": "For IVFFlat index: CREATE INDEX ON items USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);",
+          "isPrimary": false
+        },
+        {
+          "resourceId": "res-018",
+          "evidence": "The planner has improved cost estimation for custom scan providers like pgvector's HNSW and IVFFlat indexes.",
+          "isPrimary": false
+        }
+      ]
+    },
+    {
+      "id": "q-030",
+      "question": "What is the capital of France?",
+      "category": "direct_fact",
+      "answerability": "unanswerable",
+      "expectedAnswer": "The dataset does not contain information about the capital of France.",
+      "expectedEvidence": []
+    }
+  ]
+}

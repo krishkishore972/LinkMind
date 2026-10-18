@@ -1,0 +1,24 @@
+# Local development database for LinkMind.
+# Start with: docker compose up -d db
+# These credentials are for local development only; change them for any shared environment.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: linkmind-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: linkmind
+      POSTGRES_PASSWORD: linkmind_local_dev
+      POSTGRES_DB: linkmind
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - linkmind_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linkmind -d linkmind"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  linkmind_pgdata:

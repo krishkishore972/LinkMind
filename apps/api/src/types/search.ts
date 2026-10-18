@@ -15,3 +15,9 @@ export type SearchInput = {
   query: string;
   limit?: number;
 };
+
+/**
+ * Retrieval configurations, matching the `RetrievalConfiguration` enum values
+ * in the database contract.
+ */
+export type RetrievalConfiguration = 'E1' | 'E2' | 'E3' | 'E4' | 'E5';

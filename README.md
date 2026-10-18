@@ -272,6 +272,8 @@ Start it with:
 docker compose up -d db
 ```
 
+This local Docker database is the **default and recommended target** for development, tests, and evaluation: it needs no secrets, works offline, and produces deterministic retrieval latency. A managed PostgreSQL 15+ service that provides the pgvector extension (for example Neon) may be used instead by pointing `DATABASE_URL` at it; keep that connection string out of Git. Set the same `DATABASE_URL` in `apps/api/.env` (used by the API) and `packages/db/.env` (used by the Prisma CLI).
+
 These credentials are for local development only. Change them for any shared or deployed environment. The port is bound to localhost. Do not expose an unauthenticated development database to a public network.
 
 ### 3. Configure environment variables
