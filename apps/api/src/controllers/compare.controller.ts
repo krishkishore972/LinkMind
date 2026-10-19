@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import type { RetrievalService } from '../services/retrieval.service.js';
 import type { VectorRetrievalService } from '../services/vector-retrieval.service.js';
+import type { GraphRetrievalService } from '../services/graph-retrieval.service.js';
 import type { SearchResult } from '../types/search.js';
 
 const compareSchema = z.object({
@@ -10,11 +11,10 @@ const compareSchema = z.object({
   configurations: z.array(z.enum(['E1', 'E2', 'E3', 'E4', 'E5'])).optional(),
 });
 
-const E1_BM25_RAW: 'E1' = 'E1';
-const E2_VECTOR_RAW: 'E2' = 'E2';
+type RetrievalConfiguration = 'E1' | 'E2' | 'E3' | 'E4' | 'E5';
 
 interface CompareResult {
-  configuration: 'E1' | 'E2' | 'E3' | 'E4' | 'E5';
+  configuration: RetrievalConfiguration;
   results: readonly SearchResult[];
   latencyMs: number;
 }
@@ -23,6 +23,9 @@ export class CompareController {
   public constructor(
     private readonly bm25Service: RetrievalService,
     private readonly vectorService: VectorRetrievalService | null,
+    private readonly summaryVectorService: VectorRetrievalService | null,
+    private readonly factVectorService: VectorRetrievalService | null,
+    private readonly graphService: GraphRetrievalService | null,
   ) {}
 
   public compare = async (request: Request, response: Response): Promise<void> => {
@@ -50,6 +53,12 @@ export class CompareController {
           searchResults = await this.bm25Service.search(input);
         } else if (config === 'E2' && this.vectorService) {
           searchResults = await this.vectorService.search(input);
+        } else if (config === 'E3' && this.summaryVectorService) {
+          searchResults = await this.summaryVectorService.search(input);
+        } else if (config === 'E4' && this.factVectorService) {
+          searchResults = await this.factVectorService.search(input);
+        } else if (config === 'E5' && this.graphService) {
+          searchResults = await this.graphService.search(input);
         } else {
           searchResults = [];
         }

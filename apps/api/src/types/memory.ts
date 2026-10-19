@@ -28,6 +28,26 @@ export type RawMemoryChunkInput = {
   evidenceEnd: number;
 };
 
+export type SummaryMemoryInput = {
+  resourceId: string;
+  content: string;
+  evidenceText: string;
+  evidenceStart: number;
+  evidenceEnd: number;
+};
+
+export type FactMemoryInput = {
+  resourceId: string;
+  content: string;
+  evidenceText: string;
+  evidenceStart: number;
+  evidenceEnd: number;
+  entities: string[];
+  predicate: string;
+  subject: string;
+  object: string;
+};
+
 export type MemoryRebuildResult = {
   resourcesProcessed: number;
   chunksCreated: number;

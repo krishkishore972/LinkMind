@@ -17,6 +17,9 @@ import { EmbeddingBuilder } from './services/embedding-builder.service.js';
 import { EvaluationService } from './services/evaluation.service.js';
 import { FakeEmbeddingProvider, createFakeEmbeddingProvider } from './services/fake-embedding.provider.js';
 import { VectorRetrievalServiceImpl } from './services/vector-retrieval.service.js';
+import { SummaryBuilder } from './services/summary-builder.service.js';
+import { FactBuilder } from './services/fact-builder.service.js';
+import { GraphRetrievalServiceImpl } from './services/graph-retrieval.service.js';
 import {
   Bm25RetrievalService,
   type RetrievalService,
@@ -73,8 +76,13 @@ export function createApp(
   } = dependencies;
   const app = express();
 
-  const vectorService = new VectorRetrievalServiceImpl(embeddingProvider, memorySearchRepository);
+  const vectorService = new VectorRetrievalServiceImpl(embeddingProvider, memorySearchRepository, 'raw');
+  const summaryVectorService = new VectorRetrievalServiceImpl(embeddingProvider, memorySearchRepository, 'summary');
+  const factVectorService = new VectorRetrievalServiceImpl(embeddingProvider, memorySearchRepository, 'fact');
+  const graphRetrievalService = new GraphRetrievalServiceImpl(embeddingProvider, memorySearchRepository);
   const embeddingBuilder = new EmbeddingBuilder(memoryRepository, embeddingProvider);
+  const summaryBuilder = new SummaryBuilder(resourceService, memoryRepository, embeddingProvider);
+  const factBuilder = new FactBuilder(resourceService, memoryRepository, embeddingProvider);
   const evaluationService = new EvaluationService(retrievalService, vectorService);
 
   app.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000' }));
@@ -84,7 +92,13 @@ export function createApp(
   app.use('/api/resources', createResourceRouter(resourceService));
   app.use('/api/memories', createMemoryRouter(memoryBuilder));
   app.use('/api/query', createQueryRouter(retrievalService));
-  app.use('/api/compare', createCompareRouter(retrievalService, vectorService));
+  app.use('/api/compare', createCompareRouter(
+    retrievalService,
+    vectorService,
+    summaryVectorService,
+    factVectorService,
+    graphRetrievalService,
+  ));
   app.use('/api/evaluation', createEvaluationRouter(evaluationService));
   app.use('/api/demo', createDemoRouter(seedService));
 
@@ -99,6 +113,28 @@ export function createApp(
       response.status(200).json({ result });
     } catch (error) {
       console.error('Embedding build error:', error);
+      response.status(500).json({ error: 'internal_server_error' });
+    }
+  });
+
+  app.post('/api/summaries/build', async (request: Request, response: Response) => {
+    try {
+      const { resourceIds, batchSize } = request.body ?? {};
+      const result = await summaryBuilder.build({ resourceIds, batchSize });
+      response.status(200).json({ result });
+    } catch (error) {
+      console.error('Summary build error:', error);
+      response.status(500).json({ error: 'internal_server_error' });
+    }
+  });
+
+  app.post('/api/facts/build', async (request: Request, response: Response) => {
+    try {
+      const { resourceIds, batchSize } = request.body ?? {};
+      const result = await factBuilder.build({ resourceIds, batchSize });
+      response.status(200).json({ result });
+    } catch (error) {
+      console.error('Fact build error:', error);
       response.status(500).json({ error: 'internal_server_error' });
     }
   });

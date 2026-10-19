@@ -55,6 +55,10 @@ describe('ResourceMemoryBuilder', () => {
         );
       },
       findByRepresentation: async () => [],
+      createSummary: async () => ({} as any),
+      createFact: async () => ({} as any),
+      replaceSummaries: async () => [],
+      replaceFacts: async () => [],
     };
     const builder = new ResourceMemoryBuilder(
       new DefaultResourceService(resourceRepository),
@@ -96,6 +100,10 @@ describe('ResourceMemoryBuilder', () => {
         return chunks.map((chunk) => memoryRecord(resourceId, chunk.chunkIndex, chunk.content));
       },
       findByRepresentation: async () => [],
+      createSummary: async () => ({} as any),
+      createFact: async () => ({} as any),
+      replaceSummaries: async () => [],
+      replaceFacts: async () => [],
     };
 
     const result = await new ResourceMemoryBuilder(

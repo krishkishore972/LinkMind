@@ -11,13 +11,14 @@ export class VectorRetrievalServiceImpl implements VectorRetrievalService {
   public constructor(
     private readonly embeddingProvider: EmbeddingProvider,
     private readonly searchRepository: MemorySearchRepository,
+    private readonly representation: 'raw' | 'summary' | 'fact',
   ) {}
 
   public async search(input: SearchInput): Promise<readonly SearchResult[]> {
     const queryVector = await this.embeddingProvider.embedSingle(input.query);
     const limit = input.limit ?? 10;
 
-    const similar = await vectorRepository.searchSimilar(queryVector, 'raw', limit);
+    const similar = await vectorRepository.searchSimilar(queryVector, this.representation, limit);
 
     if (similar.length === 0) {
       return [];
