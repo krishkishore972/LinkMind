@@ -82,13 +82,22 @@ export type EvaluationSnapshot = {
   rows: EvaluationRow[];
 };
 
+export type DemoSeedResult = {
+  resourcesCreated: number;
+  resourcesSkipped: number;
+  questionsCreated: number;
+  questionsSkipped: number;
+  evidenceCreated: number;
+  memoriesBuilt: number;
+};
+
 export type LinkMindDataSource = {
   listResources: () => Promise<Resource[]>;
   getResource: (id: ResourceId) => Promise<ResourceDetail>;
   addResource: (input: CreateResourceInput) => Promise<Resource>;
   compareQuery: (question: string) => Promise<RetrievalConfiguration[]>;
   getEvaluation: () => Promise<EvaluationSnapshot>;
-  seedDemo: () => Promise<{ resourcesAdded: number; questionsAdded: number }>;
+  seedDemo: () => Promise<DemoSeedResult>;
   rebuildMemories: (resourceIds?: ResourceId[]) => Promise<MemoryRebuildResult>;
 };
 
@@ -391,7 +400,14 @@ export const createMockDataSource = (): LinkMindDataSource => ({
     ...evaluation,
     rows: evaluation.rows.map((row) => ({ ...row })),
   }),
-  seedDemo: async () => ({ resourcesAdded: 0, questionsAdded: 30 }),
+  seedDemo: async () => ({
+    resourcesCreated: 0,
+    resourcesSkipped: resources.length,
+    questionsCreated: 0,
+    questionsSkipped: 30,
+    evidenceCreated: 0,
+    memoriesBuilt: resources.length * 3,
+  }),
   rebuildMemories: async (resourceIds) => {
     const selected = resourceIds?.length
       ? resources.filter((resource) => resourceIds.includes(resource.id))
@@ -513,6 +529,7 @@ const parseResources = (value: unknown): Resource[] => {
 
 type ApiMemoryRepresentation = "raw" | "summary" | "fact";
 type ApiProvenance = "verified" | "generated" | "unverified";
+const BM25_QUERY_LIMIT = 10;
 
 const memoryRepresentationLabels: Record<
   ApiMemoryRepresentation,
@@ -582,6 +599,30 @@ const textValue = (value: unknown, field: string): string => {
   throw new Error(`Invalid API response field: ${field}`);
 };
 
+const parseBm25Results = (value: unknown): RetrievalResult[] => {
+  if (!Array.isArray(value)) throw new Error("Invalid query results");
+  return value.map((result) => {
+    if (!isRecord(result)) throw new Error("Invalid query result");
+    const evidenceText = nullableStringValue(
+      result.evidenceText,
+      "result.evidenceText",
+    );
+    const latency =
+      result.latencyMs === undefined || result.latencyMs === null
+        ? "Not measured"
+        : `${numberValue(result.latencyMs, "result.latencyMs")} ms`;
+    return {
+      rank: numberValue(result.rank, "result.rank"),
+      resourceTitle: stringValue(result.resourceTitle, "result.resourceTitle"),
+      memoryType: "Raw chunk",
+      content: stringValue(result.content, "result.content"),
+      evidence: evidenceText ?? stringValue(result.content, "result.content"),
+      score: textValue(result.score, "result.score"),
+      latency,
+    };
+  });
+};
+
 const parseConfigurationId = (value: string): RetrievalConfiguration["id"] => {
   switch (value) {
     case "E1":
@@ -593,71 +634,6 @@ const parseConfigurationId = (value: string): RetrievalConfiguration["id"] => {
     default:
       throw new Error("Invalid retrieval configuration id");
   }
-};
-
-const parseConfigurationTone = (
-  value: string,
-): RetrievalConfiguration["tone"] => {
-  switch (value) {
-    case "blue":
-    case "violet":
-    case "teal":
-    case "amber":
-    case "rose":
-      return value;
-    default:
-      throw new Error("Invalid retrieval configuration tone");
-  }
-};
-
-const parseRetrievalConfigurations = (
-  value: unknown,
-): RetrievalConfiguration[] => {
-  if (!Array.isArray(value)) throw new Error("Invalid comparison response");
-  return value.map((configuration) => {
-    if (!isRecord(configuration))
-      throw new Error("Invalid retrieval configuration");
-    const results = configuration.results;
-    if (!Array.isArray(results)) throw new Error("Invalid retrieval results");
-    return {
-      id: parseConfigurationId(
-        stringValue(configuration.id, "configuration.id"),
-      ),
-      title: stringValue(configuration.title, "configuration.title"),
-      description: stringValue(
-        configuration.description,
-        "configuration.description",
-      ),
-      tone: parseConfigurationTone(
-        stringValue(configuration.tone, "configuration.tone"),
-      ),
-      source: "api",
-      results: results.map((result) => {
-        if (!isRecord(result)) throw new Error("Invalid retrieval result");
-        return {
-          rank: numberValue(result.rank, "result.rank"),
-          resourceTitle: textValue(
-            result.resourceTitle ?? result.resourceId,
-            "result.resourceTitle",
-          ),
-          memoryType: textValue(
-            result.memoryType ?? result.representation,
-            "result.memoryType",
-          ),
-          content: stringValue(result.content, "result.content"),
-          evidence: textValue(
-            result.evidence ?? result.evidenceText,
-            "result.evidence",
-          ),
-          score: textValue(result.score, "result.score"),
-          latency:
-            result.latency !== undefined && result.latency !== null
-              ? textValue(result.latency, "result.latency")
-              : `${numberValue(result.latencyMs, "result.latencyMs")} ms`,
-        };
-      }),
-    };
-  });
 };
 
 const parseEvaluationRows = (value: unknown): EvaluationRow[] => {
@@ -675,6 +651,37 @@ const parseEvaluationRows = (value: unknown): EvaluationRow[] => {
       ),
     };
   });
+};
+
+const parseDemoSeedResult = (value: unknown): DemoSeedResult => {
+  if (!isRecord(value) || !isRecord(value.result))
+    throw new Error("Invalid demo seed response");
+  return {
+    resourcesCreated: numberValue(
+      value.result.resourcesCreated,
+      "seed.resourcesCreated",
+    ),
+    resourcesSkipped: numberValue(
+      value.result.resourcesSkipped,
+      "seed.resourcesSkipped",
+    ),
+    questionsCreated: numberValue(
+      value.result.questionsCreated,
+      "seed.questionsCreated",
+    ),
+    questionsSkipped: numberValue(
+      value.result.questionsSkipped,
+      "seed.questionsSkipped",
+    ),
+    evidenceCreated: numberValue(
+      value.result.evidenceCreated,
+      "seed.evidenceCreated",
+    ),
+    memoriesBuilt: numberValue(
+      value.result.memoriesBuilt,
+      "seed.memoriesBuilt",
+    ),
+  };
 };
 
 class LinkMindApiError extends Error {
@@ -742,13 +749,27 @@ export const createHttpDataSource = (
   },
   compareQuery: async (question) => {
     try {
-      const value = await request(baseUrl, "/api/query/compare", {
+      const value = await request(baseUrl, "/api/query", {
         method: "POST",
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ query: question, limit: BM25_QUERY_LIMIT }),
       });
-      if (!isRecord(value) || !Array.isArray(value.configurations))
-        throw new Error("Invalid comparison response");
-      return parseRetrievalConfigurations(value.configurations);
+      if (!isRecord(value)) throw new Error("Invalid query response");
+      const configuration = parseConfigurationId(
+        stringValue(value.configuration, "query.configuration"),
+      );
+      if (configuration !== "E1") return fallback.compareQuery(question);
+      const liveConfiguration: RetrievalConfiguration = {
+        id: configuration,
+        title: "BM25 / raw",
+        description: "Lexical search over source chunks",
+        tone: "blue",
+        source: "api",
+        results: parseBm25Results(value.results),
+      };
+      const fallbackConfigurations = await fallback.compareQuery(question);
+      return fallbackConfigurations.map((item) =>
+        item.id === liveConfiguration.id ? liveConfiguration : item,
+      );
     } catch (cause) {
       if (isNotFound(cause)) return fallback.compareQuery(question);
       throw cause;
@@ -784,17 +805,7 @@ export const createHttpDataSource = (
       const value = await request(baseUrl, "/api/demo/seed", {
         method: "POST",
       });
-      if (!isRecord(value)) throw new Error("Invalid seed response");
-      return {
-        resourcesAdded: numberValue(
-          value.resourcesAdded,
-          "seed.resourcesAdded",
-        ),
-        questionsAdded: numberValue(
-          value.questionsAdded,
-          "seed.questionsAdded",
-        ),
-      };
+      return parseDemoSeedResult(value);
     } catch (cause) {
       if (isNotFound(cause)) return fallback.seedDemo();
       throw cause;

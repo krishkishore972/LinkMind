@@ -194,4 +194,76 @@ describe("HTTP data source", () => {
       configurationCount: 5,
     });
   });
+
+  it("maps the implemented BM25 query and demo seed responses", async () => {
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = (body: unknown): Response =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+
+    fetchMock
+      .mockResolvedValueOnce(
+        response({
+          configuration: "E1",
+          results: [
+            {
+              memoryId: "memory-1",
+              resourceId: "resource-1",
+              resourceTitle: "API note",
+              content: "BM25 evidence",
+              evidenceText: "BM25 evidence",
+              score: 1.5,
+              rank: 1,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({
+          result: {
+            resourcesCreated: 20,
+            resourcesSkipped: 0,
+            questionsCreated: 30,
+            questionsSkipped: 0,
+            evidenceCreated: 30,
+            memoriesBuilt: 20,
+          },
+        }),
+      );
+
+    const source = createHttpDataSource("http://localhost:4000");
+    const configurations = await source.compareQuery("What is BM25?");
+    const seed = await source.seedDemo();
+
+    expect(configurations[0]).toMatchObject({
+      id: "E1",
+      source: "api",
+      results: [
+        expect.objectContaining({
+          memoryType: "Raw chunk",
+          evidence: "BM25 evidence",
+          score: "1.5",
+          latency: "Not measured",
+        }),
+      ],
+    });
+    expect(
+      configurations.slice(1).every((item) => item.source === "mock"),
+    ).toBe(true);
+    expect(seed).toEqual({
+      resourcesCreated: 20,
+      resourcesSkipped: 0,
+      questionsCreated: 30,
+      questionsSkipped: 0,
+      evidenceCreated: 30,
+      memoriesBuilt: 20,
+    });
+
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(
+      JSON.stringify({ query: "What is BM25?", limit: 10 }),
+    );
+  });
 });

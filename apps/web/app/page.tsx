@@ -552,7 +552,11 @@ function ResultCard({ result }: { result: RetrievalResult }) {
         <p>“{result.evidence}”</p>
       </div>
       <div className={styles.resultFooter}>
-        <span>{result.latency} retrieval</span>
+        <span>
+          {result.latency === "Not measured"
+            ? "Latency not measured"
+            : `${result.latency} retrieval`}
+        </span>
         <span>
           Source-grounded <b>✓</b>
         </span>
@@ -633,6 +637,15 @@ function AskView() {
   useEffect(() => {
     void compare(questions[0]);
   }, []);
+  const apiConfigurationCount = configurations.filter(
+    (configuration) => configuration.source === "api",
+  ).length;
+  const queryStatus =
+    apiConfigurationCount === 0
+      ? "Mock dataset"
+      : apiConfigurationCount === configurations.length
+        ? "API data"
+        : "E1 API · E2–E5 mock";
   return (
     <main className={styles.content}>
       <div className={styles.askIntro}>
@@ -641,9 +654,7 @@ function AskView() {
           <h1>Ask LinkMind</h1>
           <p>Run the same question through five memory configurations.</p>
         </div>
-        <div className={styles.queryStatus}>
-          ● {configurations[0]?.source === "api" ? "API data" : "Mock dataset"}
-        </div>
+        <div className={styles.queryStatus}>● {queryStatus}</div>
       </div>
       <form
         className={styles.askForm}
