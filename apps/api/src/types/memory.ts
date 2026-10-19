@@ -12,6 +12,9 @@ export type MemoryItemRecord = {
   evidenceEnd: number | null;
   provenance: ProvenanceStatus;
   metadata: unknown;
+  embedding: number[] | null;
+  embeddingModel: string | null;
+  embeddingDimensions: number | null;
   createdAt: string;
   updatedAt: string;
 };

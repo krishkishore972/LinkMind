@@ -21,6 +21,9 @@ function memoryRecord(
     evidenceEnd: content.length,
     provenance: 'verified',
     metadata: { source: 'resource-content' },
+    embedding: null,
+    embeddingModel: null,
+    embeddingDimensions: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   };
@@ -51,6 +54,7 @@ describe('ResourceMemoryBuilder', () => {
           memoryRecord(resourceId, chunk.chunkIndex, chunk.content),
         );
       },
+      findByRepresentation: async () => [],
     };
     const builder = new ResourceMemoryBuilder(
       new DefaultResourceService(resourceRepository),
@@ -91,6 +95,7 @@ describe('ResourceMemoryBuilder', () => {
         processed.push(resourceId);
         return chunks.map((chunk) => memoryRecord(resourceId, chunk.chunkIndex, chunk.content));
       },
+      findByRepresentation: async () => [],
     };
 
     const result = await new ResourceMemoryBuilder(

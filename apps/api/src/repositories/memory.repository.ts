@@ -9,6 +9,10 @@ export interface MemoryRepository {
     resourceId: string,
     chunks: readonly RawMemoryChunkInput[],
   ): Promise<readonly MemoryItemRecord[]>;
+  findByRepresentation(
+    representation: 'raw' | 'summary' | 'fact',
+    resourceIds?: readonly string[],
+  ): Promise<readonly MemoryItemRecord[]>;
 }
 
 function toMemoryItemRecord(item: MemoryItemRecord): MemoryItemRecord {
@@ -44,5 +48,20 @@ export const memoryRepository: MemoryRepository = {
     }
 
     return memories;
+  },
+
+  async findByRepresentation(
+    representation: 'raw' | 'summary' | 'fact',
+    resourceIds?: readonly string[],
+  ): Promise<readonly MemoryItemRecord[]> {
+    const memories = await db.orm.public.MemoryItem.where({ representation }).all();
+
+    let filtered = memories;
+    if (resourceIds && resourceIds.length > 0) {
+      const idSet = new Set(resourceIds);
+      filtered = memories.filter((m) => idSet.has(m.resourceId));
+    }
+
+    return filtered.map(toMemoryItemRecord);
   },
 };
