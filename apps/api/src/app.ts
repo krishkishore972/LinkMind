@@ -11,8 +11,10 @@ import { createQueryRouter } from './routes/query.routes.js';
 import { createCompareRouter } from './routes/compare.routes.js';
 import { memorySearchRepository } from './repositories/memory-search.repository.js';
 import { createDemoRouter } from './routes/demo.routes.js';
+import { createEvaluationRouter } from './routes/evaluation.routes.js';
 import { DemoSeedService } from './services/demo-seed.service.js';
 import { EmbeddingBuilder } from './services/embedding-builder.service.js';
+import { EvaluationService } from './services/evaluation.service.js';
 import { FakeEmbeddingProvider, createFakeEmbeddingProvider } from './services/fake-embedding.provider.js';
 import { VectorRetrievalServiceImpl } from './services/vector-retrieval.service.js';
 import {
@@ -73,6 +75,7 @@ export function createApp(
 
   const vectorService = new VectorRetrievalServiceImpl(embeddingProvider, memorySearchRepository);
   const embeddingBuilder = new EmbeddingBuilder(memoryRepository, embeddingProvider);
+  const evaluationService = new EvaluationService(retrievalService, vectorService);
 
   app.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000' }));
   app.use(helmet());
@@ -82,6 +85,7 @@ export function createApp(
   app.use('/api/memories', createMemoryRouter(memoryBuilder));
   app.use('/api/query', createQueryRouter(retrievalService));
   app.use('/api/compare', createCompareRouter(retrievalService, vectorService));
+  app.use('/api/evaluation', createEvaluationRouter(evaluationService));
   app.use('/api/demo', createDemoRouter(seedService));
 
   app.post('/api/embeddings/build', async (request: Request, response: Response) => {

@@ -8,6 +8,8 @@ import type {
 
 export interface EvaluationQuestionRepository {
   findById(id: string): Promise<EvaluationQuestionRecord | null>;
+  findAll(datasetVersion?: string): Promise<EvaluationQuestionRecord[]>;
+  findExpectedEvidence(questionId: string): Promise<ExpectedEvidenceRecord[]>;
   create(input: CreateEvaluationQuestionInput): Promise<EvaluationQuestionRecord>;
   createExpectedEvidence(input: CreateExpectedEvidenceInput): Promise<ExpectedEvidenceRecord>;
 }
@@ -27,6 +29,36 @@ export const evaluationQuestionRepository: EvaluationQuestionRepository = {
       datasetVersion: question.datasetVersion,
       createdAt: question.createdAt,
     };
+  },
+
+  async findAll(datasetVersion?: string): Promise<EvaluationQuestionRecord[]> {
+    let questions;
+    if (datasetVersion) {
+      questions = await db.orm.public.EvaluationQuestion.where({ datasetVersion }).all();
+    } else {
+      questions = await db.orm.public.EvaluationQuestion.all();
+    }
+    return questions.map((q) => ({
+      id: q.id,
+      question: q.question,
+      category: q.category,
+      answerability: q.answerability,
+      expectedAnswer: q.expectedAnswer,
+      datasetVersion: q.datasetVersion,
+      createdAt: q.createdAt,
+    }));
+  },
+
+  async findExpectedEvidence(questionId: string): Promise<ExpectedEvidenceRecord[]> {
+    const evidence = await db.orm.public.ExpectedEvidence.where({ questionId }).all();
+    return evidence.map((e) => ({
+      id: e.id,
+      questionId: e.questionId,
+      resourceId: e.resourceId,
+      memoryId: e.memoryId,
+      evidence: e.evidence,
+      isPrimary: e.isPrimary,
+    }));
   },
 
   async create(input: CreateEvaluationQuestionInput): Promise<EvaluationQuestionRecord> {
