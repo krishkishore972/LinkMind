@@ -326,7 +326,8 @@ These are planned endpoint contracts, not proof that the routes are implemented.
 | `POST` | `/api/resources`               | Add resource text and metadata                              |
 | `GET`  | `/api/resources/:id`           | Retrieve one resource and its memory items                  |
 | `POST` | `/api/memories/rebuild`        | Build representations and embeddings for selected resources |
-| `POST` | `/api/query/compare`           | Search all comparison configurations for one question       |
+| `POST` | `/api/compare`                 | Search all comparison configurations for one question       |
+| `GET`  | `/api/evaluation/runs`         | List persisted evaluation runs                              |
 | `POST` | `/api/evaluation/run`          | Run the fixed evaluation set                                |
 | `GET`  | `/api/evaluation/runs/:id`     | Retrieve metrics and question-level results                 |
 | `GET`  | `/api/evaluation/runs/:id.csv` | Export question-level results as CSV                        |

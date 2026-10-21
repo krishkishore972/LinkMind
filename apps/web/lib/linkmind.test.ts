@@ -179,7 +179,7 @@ describe("HTTP data source", () => {
     );
   });
 
-  it("uses mock retrieval and evaluation data until those routes exist", async () => {
+  it("falls back to mock retrieval and evaluation data when routes are unavailable", async () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
     fetchMock
@@ -195,7 +195,7 @@ describe("HTTP data source", () => {
     });
   });
 
-  it("maps the implemented BM25 query and demo seed responses", async () => {
+  it("maps the implemented comparison and demo seed responses", async () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);
     const response = (body: unknown): Response =>
@@ -207,16 +207,21 @@ describe("HTTP data source", () => {
     fetchMock
       .mockResolvedValueOnce(
         response({
-          configuration: "E1",
           results: [
             {
-              memoryId: "memory-1",
-              resourceId: "resource-1",
-              resourceTitle: "API note",
-              content: "BM25 evidence",
-              evidenceText: "BM25 evidence",
-              score: 1.5,
-              rank: 1,
+              configuration: "E1",
+              latencyMs: 3,
+              results: [
+                {
+                  memoryId: "memory-1",
+                  resourceId: "resource-1",
+                  resourceTitle: "API note",
+                  content: "BM25 evidence",
+                  evidenceText: "BM25 evidence",
+                  score: 1.5,
+                  rank: 1,
+                },
+              ],
             },
           ],
         }),
@@ -246,13 +251,15 @@ describe("HTTP data source", () => {
           memoryType: "Raw chunk",
           evidence: "BM25 evidence",
           score: "1.5",
-          latency: "Not measured",
+          latency: "3 ms",
         }),
       ],
     });
-    expect(
-      configurations.slice(1).every((item) => item.source === "mock"),
-    ).toBe(true);
+    expect(configurations).toHaveLength(5);
+    expect(configurations.every((item) => item.source === "api")).toBe(true);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "http://localhost:4000/api/compare",
+    );
     expect(seed).toEqual({
       resourcesCreated: 20,
       resourcesSkipped: 0,
@@ -263,7 +270,112 @@ describe("HTTP data source", () => {
     });
 
     expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(
-      JSON.stringify({ query: "What is BM25?", limit: 10 }),
+      JSON.stringify({
+        query: "What is BM25?",
+        limit: 10,
+        configurations: ["E1", "E2", "E3", "E4", "E5"],
+      }),
     );
+  });
+
+  it("maps persisted evaluation runs and starts a new run", async () => {
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = (body: unknown): Response =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+
+    fetchMock
+      .mockResolvedValueOnce(
+        response({
+          runs: [
+            {
+              id: "run-1",
+              startedAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({
+          run: {
+            id: "run-1",
+            startedAt: "2026-01-01T00:00:00.000Z",
+            completedAt: "2026-01-01T00:01:00.000Z",
+            datasetVersion: "v1.0",
+            results: [
+              {
+                questionId: "question-1",
+                configuration: "E1",
+                recallAt3: 1,
+                mrr: 1,
+                evidenceCorrect: null,
+                latencyMs: 4,
+              },
+            ],
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({
+          result: {
+            runId: "run-2",
+            datasetVersion: "v1.0",
+            totalQuestions: 1,
+            configurations: ["E1"],
+            aggregateMetrics: {
+              E1: {
+                recallAt3: 1,
+                mrr: 1,
+                avgLatencyMs: 5,
+              },
+            },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({
+          run: {
+            id: "run-2",
+            startedAt: "2026-01-01T00:02:00.000Z",
+            completedAt: "2026-01-01T00:03:00.000Z",
+            datasetVersion: "v1.0",
+            results: [
+              {
+                questionId: "question-1",
+                configuration: "E1",
+                recallAt3: 1,
+                mrr: 1,
+                evidenceCorrect: null,
+                latencyMs: 5,
+              },
+            ],
+          },
+        }),
+      );
+
+    const source = createHttpDataSource("http://localhost:4000");
+    await expect(source.getEvaluation()).resolves.toMatchObject({
+      runLabel: "2026-01-01T00:01:00.000Z",
+      questionCount: 1,
+      configurationCount: 1,
+      rows: [
+        expect.objectContaining({
+          configuration: "BM25 / raw",
+          recallAt3: "1.00",
+          mrr: "1.00",
+          latency: "4 ms",
+          evidenceCorrectness: "Not audited",
+        }),
+      ],
+    });
+    await expect(source.runEvaluation()).resolves.toMatchObject({
+      runLabel: "2026-01-01T00:03:00.000Z",
+      questionCount: 1,
+      source: "api",
+      rows: [expect.objectContaining({ configuration: "BM25 / raw" })],
+    });
   });
 });

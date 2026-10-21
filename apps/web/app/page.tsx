@@ -566,6 +566,10 @@ function ResultCard({ result }: { result: RetrievalResult }) {
 }
 
 function exportEvaluationCsv(snapshot: EvaluationSnapshot): void {
+  if (snapshot.csvUrl) {
+    window.open(snapshot.csvUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
   const header = [
     "configuration",
     "recall_at_3",
@@ -751,6 +755,8 @@ function AskView() {
 function EvaluationView() {
   const [snapshot, setSnapshot] = useState<EvaluationSnapshot | null>(null);
   const [state, setState] = useState<LoadState>("loading");
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState("");
   useEffect(() => {
     void dataSource
       .getEvaluation()
@@ -758,7 +764,14 @@ function EvaluationView() {
         setSnapshot(value);
         setState("ready");
       })
-      .catch(() => setState("error"));
+      .catch((cause) => {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Evaluation data is not available yet.",
+        );
+        setState("error");
+      });
   }, []);
   if (state === "loading")
     return (
@@ -770,15 +783,33 @@ function EvaluationView() {
     return (
       <main className={styles.content}>
         <StatusMessage error>
-          Evaluation data is not available yet.
+          {error || "Evaluation data is not available yet."}
         </StatusMessage>
       </main>
     );
+  const run = async () => {
+    if (running) return;
+    setRunning(true);
+    setError("");
+    try {
+      setSnapshot(await dataSource.runEvaluation());
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Could not run evaluation.",
+      );
+    } finally {
+      setRunning(false);
+    }
+  };
   const summary: [string, string, string][] = [
     [
       "Latest run",
       snapshot.runLabel,
-      "Mock values shown for interface planning",
+      snapshot.source === "api"
+        ? snapshot.rows.length
+          ? "Persisted backend run"
+          : "No persisted run yet"
+        : "Mock data",
     ],
     ["Questions", String(snapshot.questionCount), "Fixed evaluation set"],
     [
@@ -798,10 +829,15 @@ function EvaluationView() {
           <h1>Evaluation</h1>
           <p>Compare retrieval quality on the fixed LinkMind question set.</p>
         </div>
-        <button className={styles.secondaryButton} disabled>
-          Run evaluation <small>Later</small>
+        <button
+          className={styles.secondaryButton}
+          onClick={() => void run()}
+          disabled={running}
+        >
+          {running ? "Running..." : "Run evaluation"}
         </button>
       </div>
+      {error && <StatusMessage error>{error}</StatusMessage>}
       <section className={styles.evalSummary}>
         {summary.map(([label, value, sub]) => (
           <div key={label}>
@@ -815,7 +851,11 @@ function EvaluationView() {
         <div className={styles.sectionHeader}>
           <div>
             <h2>Configuration results</h2>
-            <p>Illustrative values until the evaluation route is connected.</p>
+            <p>
+              {snapshot.source === "api"
+                ? "Metrics are calculated from persisted question-level results."
+                : "Mock values shown until the evaluation API is available."}
+            </p>
           </div>
           <button
             className={styles.exportButton}

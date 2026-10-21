@@ -80,6 +80,8 @@ export type EvaluationSnapshot = {
   configurationCount: number;
   datasetVersion: string;
   rows: EvaluationRow[];
+  source: DataSourceKind;
+  csvUrl?: string;
 };
 
 export type DemoSeedResult = {
@@ -97,6 +99,7 @@ export type LinkMindDataSource = {
   addResource: (input: CreateResourceInput) => Promise<Resource>;
   compareQuery: (question: string) => Promise<RetrievalConfiguration[]>;
   getEvaluation: () => Promise<EvaluationSnapshot>;
+  runEvaluation: () => Promise<EvaluationSnapshot>;
   seedDemo: () => Promise<DemoSeedResult>;
   rebuildMemories: (resourceIds?: ResourceId[]) => Promise<MemoryRebuildResult>;
 };
@@ -303,6 +306,7 @@ const evaluation: EvaluationSnapshot = {
   questionCount: 30,
   configurationCount: 5,
   datasetVersion: "v0.1",
+  source: "mock",
   rows: [
     {
       configuration: "BM25 / raw",
@@ -397,6 +401,10 @@ export const createMockDataSource = (): LinkMindDataSource => ({
       results: configuration.results.map((result) => ({ ...result })),
     })),
   getEvaluation: async () => ({
+    ...evaluation,
+    rows: evaluation.rows.map((row) => ({ ...row })),
+  }),
+  runEvaluation: async () => ({
     ...evaluation,
     rows: evaluation.rows.map((row) => ({ ...row })),
   }),
@@ -599,26 +607,106 @@ const textValue = (value: unknown, field: string): string => {
   throw new Error(`Invalid API response field: ${field}`);
 };
 
-const parseBm25Results = (value: unknown): RetrievalResult[] => {
-  if (!Array.isArray(value)) throw new Error("Invalid query results");
-  return value.map((result) => {
-    if (!isRecord(result)) throw new Error("Invalid query result");
-    const evidenceText = nullableStringValue(
-      result.evidenceText,
-      "result.evidenceText",
+const configurationMetadata: Record<
+  RetrievalConfiguration["id"],
+  Omit<RetrievalConfiguration, "id" | "source" | "results">
+> = {
+  E1: {
+    title: "BM25 / raw",
+    description: "Lexical search over source chunks",
+    tone: "blue",
+  },
+  E2: {
+    title: "Vector / raw",
+    description: "Semantic search over source chunks",
+    tone: "violet",
+  },
+  E3: {
+    title: "Vector / summary",
+    description: "Semantic search over summaries",
+    tone: "teal",
+  },
+  E4: {
+    title: "Vector / facts",
+    description: "Semantic search over atomic facts",
+    tone: "amber",
+  },
+  E5: {
+    title: "Facts + graph",
+    description: "Facts expanded through bounded relationships",
+    tone: "rose",
+  },
+};
+
+const memoryTypeForConfiguration = (
+  configuration: RetrievalConfiguration["id"],
+): string => {
+  if (configuration === "E3") return "Summary";
+  if (configuration === "E4") return "Structured fact";
+  if (configuration === "E5") return "Graph-linked fact";
+  return "Raw chunk";
+};
+
+const configurationLabel = (configuration: string): string => {
+  if (
+    configuration === "E1" ||
+    configuration === "E2" ||
+    configuration === "E3" ||
+    configuration === "E4" ||
+    configuration === "E5"
+  ) {
+    return configurationMetadata[configuration].title;
+  }
+  return configuration;
+};
+
+const parseCompareResults = (value: unknown): RetrievalConfiguration[] => {
+  if (!isRecord(value) || !Array.isArray(value.results)) {
+    throw new Error("Invalid compare response");
+  }
+
+  const apiConfigurations = new Map<
+    RetrievalConfiguration["id"],
+    Record<string, unknown>
+  >();
+  for (const item of value.results) {
+    if (!isRecord(item)) throw new Error("Invalid compare configuration");
+    const id = parseConfigurationId(
+      stringValue(item.configuration, "compare.configuration"),
     );
+    apiConfigurations.set(id, item);
+  }
+
+  return (["E1", "E2", "E3", "E4", "E5"] as const).map((id) => {
+    const item = apiConfigurations.get(id);
+    const latencyMs = item?.latencyMs;
     const latency =
-      result.latencyMs === undefined || result.latencyMs === null
+      latencyMs === undefined || latencyMs === null
         ? "Not measured"
-        : `${numberValue(result.latencyMs, "result.latencyMs")} ms`;
+        : `${numberValue(latencyMs, "compare.latencyMs")} ms`;
+    const rawResults = item?.results;
+    if (rawResults !== undefined && !Array.isArray(rawResults)) {
+      throw new Error("Invalid compare results");
+    }
+    const results = (rawResults ?? []).map((result) => {
+      if (!isRecord(result)) throw new Error("Invalid compare result");
+      return {
+        rank: numberValue(result.rank, "result.rank"),
+        resourceTitle: stringValue(result.resourceTitle, "result.resourceTitle"),
+        memoryType: memoryTypeForConfiguration(id),
+        content: stringValue(result.content, "result.content"),
+        evidence:
+          nullableStringValue(result.evidenceText, "result.evidenceText") ??
+          stringValue(result.content, "result.content"),
+        score: textValue(result.score, "result.score"),
+        latency,
+      } satisfies RetrievalResult;
+    });
     return {
-      rank: numberValue(result.rank, "result.rank"),
-      resourceTitle: stringValue(result.resourceTitle, "result.resourceTitle"),
-      memoryType: "Raw chunk",
-      content: stringValue(result.content, "result.content"),
-      evidence: evidenceText ?? stringValue(result.content, "result.content"),
-      score: textValue(result.score, "result.score"),
-      latency,
+      id,
+      ...configurationMetadata[id],
+      source: "api",
+      results,
     };
   });
 };
@@ -636,21 +724,86 @@ const parseConfigurationId = (value: string): RetrievalConfiguration["id"] => {
   }
 };
 
-const parseEvaluationRows = (value: unknown): EvaluationRow[] => {
-  if (!Array.isArray(value)) throw new Error("Invalid evaluation rows");
-  return value.map((row) => {
-    if (!isRecord(row)) throw new Error("Invalid evaluation row");
+const nullableNumberValue = (value: unknown, field: string): number | null => {
+  if (value === null || value === undefined) return null;
+  return numberValue(value, field);
+};
+
+const formatMetric = (value: number | null, digits = 2): string =>
+  value === null ? "—" : value.toFixed(digits);
+
+const parseEvaluationRun = (
+  value: unknown,
+  csvUrl?: string,
+): EvaluationSnapshot => {
+  if (!isRecord(value) || !isRecord(value.run)) {
+    throw new Error("Invalid evaluation run response");
+  }
+  const run = value.run;
+  const results = Array.isArray(run.results) ? run.results : [];
+  const grouped = new Map<string, Record<string, unknown>[]>();
+  const questions = new Set<string>();
+  for (const item of results) {
+    if (!isRecord(item)) throw new Error("Invalid evaluation result");
+    const configuration = stringValue(
+      item.configuration,
+      "evaluation.configuration",
+    );
+    const current = grouped.get(configuration) ?? [];
+    current.push(item);
+    grouped.set(configuration, current);
+    questions.add(stringValue(item.questionId, "evaluation.questionId"));
+  }
+
+  const rows = [...grouped.entries()].map(([configuration, items]) => {
+    const recall = items
+      .map((item) => nullableNumberValue(item.recallAt3, "evaluation.recallAt3"))
+      .filter((value): value is number => value !== null);
+    const mrr = items
+      .map((item) => nullableNumberValue(item.mrr, "evaluation.mrr"))
+      .filter((value): value is number => value !== null);
+    const latency = items.map((item) =>
+      numberValue(item.latencyMs, "evaluation.latencyMs"),
+    );
+    const audited = items
+      .map((item) => item.evidenceCorrect)
+      .filter((value): value is boolean => typeof value === "boolean");
+    const evidenceCorrectness = audited.length
+      ? `${Math.round(
+          (audited.filter((value) => value).length / audited.length) * 100,
+        )}%`
+      : "Not audited";
     return {
-      configuration: stringValue(row.configuration, "evaluation.configuration"),
-      recallAt3: stringValue(row.recallAt3, "evaluation.recallAt3"),
-      mrr: stringValue(row.mrr, "evaluation.mrr"),
-      latency: stringValue(row.latency, "evaluation.latency"),
-      evidenceCorrectness: stringValue(
-        row.evidenceCorrectness,
-        "evaluation.evidenceCorrectness",
+      configuration,
+      recallAt3: formatMetric(
+        recall.length
+          ? recall.reduce((sum, value) => sum + value, 0) / recall.length
+          : null,
       ),
+      mrr: formatMetric(
+        mrr.length
+          ? mrr.reduce((sum, value) => sum + value, 0) / mrr.length
+          : null,
+      ),
+      latency: latency.length
+        ? `${Math.round(latency.reduce((sum, value) => sum + value, 0) / latency.length)} ms`
+        : "—",
+      evidenceCorrectness,
     };
   });
+
+  return {
+    runLabel: stringValue(run.completedAt ?? run.startedAt, "evaluation.runDate"),
+    questionCount: questions.size,
+    configurationCount: grouped.size,
+    datasetVersion: stringValue(run.datasetVersion, "evaluation.datasetVersion"),
+    rows: rows.map((row) => ({
+      ...row,
+      configuration: configurationLabel(row.configuration),
+    })),
+    source: "api",
+    csvUrl,
+  };
 };
 
 const parseDemoSeedResult = (value: unknown): DemoSeedResult => {
@@ -749,27 +902,15 @@ export const createHttpDataSource = (
   },
   compareQuery: async (question) => {
     try {
-      const value = await request(baseUrl, "/api/query", {
+      const value = await request(baseUrl, "/api/compare", {
         method: "POST",
-        body: JSON.stringify({ query: question, limit: BM25_QUERY_LIMIT }),
+        body: JSON.stringify({
+          query: question,
+          limit: BM25_QUERY_LIMIT,
+          configurations: ["E1", "E2", "E3", "E4", "E5"],
+        }),
       });
-      if (!isRecord(value)) throw new Error("Invalid query response");
-      const configuration = parseConfigurationId(
-        stringValue(value.configuration, "query.configuration"),
-      );
-      if (configuration !== "E1") return fallback.compareQuery(question);
-      const liveConfiguration: RetrievalConfiguration = {
-        id: configuration,
-        title: "BM25 / raw",
-        description: "Lexical search over source chunks",
-        tone: "blue",
-        source: "api",
-        results: parseBm25Results(value.results),
-      };
-      const fallbackConfigurations = await fallback.compareQuery(question);
-      return fallbackConfigurations.map((item) =>
-        item.id === liveConfiguration.id ? liveConfiguration : item,
-      );
+      return parseCompareResults(value);
     } catch (cause) {
       if (isNotFound(cause)) return fallback.compareQuery(question);
       throw cause;
@@ -777,26 +918,50 @@ export const createHttpDataSource = (
   },
   getEvaluation: async () => {
     try {
-      const value = await request(baseUrl, "/api/evaluation/latest");
-      if (!isRecord(value)) throw new Error("Invalid evaluation response");
-      return {
-        runLabel: stringValue(value.runLabel, "evaluation.runLabel"),
-        questionCount: numberValue(
-          value.questionCount,
-          "evaluation.questionCount",
-        ),
-        configurationCount: numberValue(
-          value.configurationCount,
-          "evaluation.configurationCount",
-        ),
-        datasetVersion: stringValue(
-          value.datasetVersion,
-          "evaluation.datasetVersion",
-        ),
-        rows: parseEvaluationRows(value.rows ?? []),
-      };
+      const value = await request(baseUrl, "/api/evaluation/runs");
+      if (!isRecord(value) || !Array.isArray(value.runs)) {
+        throw new Error("Invalid evaluation runs response");
+      }
+      const latest = value.runs[0];
+      if (!latest) {
+        return {
+          runLabel: "No runs yet",
+          questionCount: 0,
+          configurationCount: 0,
+          datasetVersion: "—",
+          rows: [],
+          source: "api",
+        };
+      }
+      if (!isRecord(latest)) throw new Error("Invalid evaluation run summary");
+      const runId = stringValue(latest.id, "evaluation.runId");
+      return parseEvaluationRun(
+        await request(baseUrl, `/api/evaluation/runs/${runId}`),
+        `${baseUrl.replace(/\/$/, "")}/api/evaluation/runs/${runId}.csv`,
+      );
     } catch (cause) {
       if (isNotFound(cause)) return fallback.getEvaluation();
+      throw cause;
+    }
+  },
+  runEvaluation: async () => {
+    try {
+      const value = await request(baseUrl, "/api/evaluation/run", {
+        method: "POST",
+        body: JSON.stringify({
+          configurations: ["E1", "E2", "E3", "E4", "E5"],
+        }),
+      });
+      if (!isRecord(value) || !isRecord(value.result)) {
+        throw new Error("Invalid evaluation run response");
+      }
+      const runId = stringValue(value.result.runId, "evaluation.runId");
+      return parseEvaluationRun(
+        await request(baseUrl, `/api/evaluation/runs/${runId}`),
+        `${baseUrl.replace(/\/$/, "")}/api/evaluation/runs/${runId}.csv`,
+      );
+    } catch (cause) {
+      if (isNotFound(cause)) return fallback.runEvaluation();
       throw cause;
     }
   },
