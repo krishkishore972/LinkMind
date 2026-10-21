@@ -23,7 +23,7 @@ export const vectorRepository: VectorRepository = {
       const vectorLiteral = `[${item.embedding.join(',')}]`;
       const plan = db.raw.sql`
         UPDATE "public"."memory_items"
-        SET "embedding" = ${vectorLiteral}::vector(1536)
+        SET "embedding" = ${vectorLiteral}::vector(3072)
         WHERE "id" = ${item.id}
       `.returnsRow({
         dummy: 'pg/int4@1',
@@ -43,11 +43,11 @@ export const vectorRepository: VectorRepository = {
     const plan = db.raw.sql`
       SELECT
         "id" as "memoryId",
-        1 - ("embedding" <=> ${vectorLiteral}::vector(1536)) as "score"
+        1 - ("embedding" <=> ${vectorLiteral}::vector(3072)) as "score"
       FROM "public"."memory_items"
       WHERE "representation" = ${representation}
         AND "embedding" IS NOT NULL
-      ORDER BY "embedding" <=> ${vectorLiteral}::vector(1536)
+      ORDER BY "embedding" <=> ${vectorLiteral}::vector(3072)
       LIMIT ${limit}
     `.returnsRow({
       memoryId: 'pg/text@1',

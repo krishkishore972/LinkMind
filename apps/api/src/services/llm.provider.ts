@@ -16,6 +16,7 @@ export interface CitationSource {
   memoryId: string;
   resourceId: string;
   resourceTitle: string;
+  sourceUrl?: string | null;
   content: string;
   evidenceText: string;
   score: number;
@@ -28,6 +29,7 @@ export interface CitedResponse {
     memoryId: string;
     resourceId: string;
     resourceTitle: string;
+    sourceUrl?: string | null;
     evidenceText: string;
     startIndex: number;
     endIndex: number;

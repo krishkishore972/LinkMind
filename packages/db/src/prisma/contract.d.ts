@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'7779c20909cdd156723430544e0579482da247fc0ddfa9e24c0ef01ed9432083'>;
+  StorageHashBase<'5e25c732eefda8546f471de581bef58226b0f5e99d305b8524730dee3585861e'>;
 export type ExecutionHash =
   ExecutionHashBase<'8ed06762834705b6774630728c4fa54af60421fe2e1df568f257fb3172ab0561'>;
 export type ProfileHash =
@@ -297,7 +297,7 @@ export type FieldOutputTypes = {
       readonly chunkIndex: CodecTypes['pg/int4@1']['output'] | null;
       readonly content: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly embedding: Vector<1536> | null;
+      readonly embedding: Vector<3072> | null;
       readonly embeddingDimensions: CodecTypes['pg/int4@1']['output'] | null;
       readonly embeddingModel: CodecTypes['pg/text@1']['output'] | null;
       readonly entities: CodecTypes['pg/json@1']['output'] | null;
@@ -469,7 +469,7 @@ export type StorageColumnTypes = {
       readonly chunkIndex: CodecTypes['pg/int4@1']['output'] | null;
       readonly content: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly embedding: Vector<1536> | null;
+      readonly embedding: Vector<3072> | null;
       readonly embeddingDimensions: CodecTypes['pg/int4@1']['output'] | null;
       readonly embeddingModel: CodecTypes['pg/text@1']['output'] | null;
       readonly entities: CodecTypes['pg/json@1']['output'] | null;
@@ -656,7 +656,7 @@ export namespace Models {
     chunkIndex: CodecTypes['pg/int4@1']['output'] | null;
     content: CodecTypes['pg/text@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    embedding: Vector<1536> | null;
+    embedding: Vector<3072> | null;
     embeddingDimensions: CodecTypes['pg/int4@1']['output'] | null;
     embeddingModel: CodecTypes['pg/text@1']['output'] | null;
     entities: CodecTypes['pg/json@1']['output'] | null;
@@ -1196,7 +1196,7 @@ type ContractBase = Omit<
                   readonly dataType: 'pgvector/vector';
                   readonly codecId: 'pg/vector@1';
                   readonly nullable: true;
-                  readonly typeRef: 'Embedding1536';
+                  readonly typeRef: 'Embedding3072';
                   readonly many: false;
                 };
                 readonly embeddingDimensions: {
@@ -1429,11 +1429,11 @@ type ContractBase = Omit<
       };
     };
     readonly types: {
-      readonly Embedding1536: {
+      readonly Embedding3072: {
         readonly kind: 'codec-instance';
         readonly codecId: 'pg/vector@1';
         readonly dataType: 'pgvector/vector';
-        readonly typeParams: { readonly length: 1536 };
+        readonly typeParams: { readonly length: 3072 };
       };
     };
     readonly storageHash: StorageHash;
@@ -1894,7 +1894,7 @@ type ContractBase = Omit<
                 readonly type: {
                   readonly kind: 'scalar';
                   readonly codecId: 'pg/vector@1';
-                  readonly typeParams: { readonly length: 1536 };
+                  readonly typeParams: { readonly length: 3072 };
                 };
               };
               readonly embeddingDimensions: {

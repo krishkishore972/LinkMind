@@ -24,6 +24,7 @@ export const memorySearchRepository: MemorySearchRepository = {
         memoryId: memory.id,
         resourceId: memory.resourceId,
         resourceTitle: resource.title,
+        sourceUrl: resource.sourceUrl,
         content: memory.content,
         evidenceText: memory.evidenceText,
       });
@@ -52,6 +53,7 @@ export const memorySearchRepository: MemorySearchRepository = {
         memoryId: memory.id,
         resourceId: memory.resourceId,
         resourceTitle: resource.title,
+        sourceUrl: resource.sourceUrl,
         content: memory.content,
         evidenceText: memory.evidenceText,
       });

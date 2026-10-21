@@ -20,6 +20,7 @@ import { FakeEmbeddingProvider, createFakeEmbeddingProvider } from './services/f
 import { createGeminiEmbeddingProvider } from './services/gemini-embedding.provider.js';
 import { FakeLLMProvider, createFakeLLMProvider } from './services/fake-llm.provider.js';
 import { createGeminiLLMProvider } from './services/gemini-llm.provider.js';
+import { createGroqLLMProvider } from './services/groq-llm.provider.js';
 import { VectorRetrievalServiceImpl } from './services/vector-retrieval.service.js';
 import { SummaryBuilder } from './services/summary-builder.service.js';
 import { FactBuilder } from './services/fact-builder.service.js';
@@ -75,11 +76,20 @@ function resolveLLMProvider(): { model: string; maxTokens: number; generate: (pr
     return createFakeLLMProvider();
   }
 
-  if (explicitProvider === 'gemini' || process.env.GEMINI_API_KEY) {
+  if (explicitProvider === 'groq') {
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY is required when LLM_PROVIDER=groq');
+    }
+    const model = process.env.LLM_MODEL ?? 'openai/gpt-oss-120b';
+    console.log('[DEBUG] Using Groq LLM provider with model:', model);
+    return createGroqLLMProvider(process.env.GROQ_API_KEY, model);
+  }
+
+  if (explicitProvider === 'gemini' || (!explicitProvider && process.env.GEMINI_API_KEY)) {
     if (!process.env.GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY is required when LLM_PROVIDER=gemini');
     }
-    const model = process.env.LLM_MODEL ?? 'gemini-2.0-flash';
+    const model = process.env.LLM_MODEL ?? 'gemini-flash-latest';
     console.log('[DEBUG] Using Gemini LLM provider with model:', model);
     return createGeminiLLMProvider(process.env.GEMINI_API_KEY, model);
   }

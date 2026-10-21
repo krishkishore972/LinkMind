@@ -42,6 +42,7 @@ export class FakeLLMProvider implements LLMProvider {
       memoryId: source.memoryId,
       resourceId: source.resourceId,
       resourceTitle: source.resourceTitle,
+      sourceUrl: source.sourceUrl,
       evidenceText: source.evidenceText,
       startIndex: index * 50,
       endIndex: (index + 1) * 50,

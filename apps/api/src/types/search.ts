@@ -2,6 +2,7 @@ export type SearchDocument = {
   memoryId: string;
   resourceId: string;
   resourceTitle: string;
+  sourceUrl?: string | null;
   content: string;
   evidenceText: string | null;
 };

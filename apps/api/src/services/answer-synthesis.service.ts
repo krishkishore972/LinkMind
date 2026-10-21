@@ -68,6 +68,7 @@ export class AnswerSynthesisService {
               memoryId: result.memoryId,
               resourceId: result.resourceId,
               resourceTitle: result.resourceTitle,
+              sourceUrl: result.sourceUrl,
               content: result.content,
               evidenceText: result.evidenceText ?? result.content,
               score: result.score,

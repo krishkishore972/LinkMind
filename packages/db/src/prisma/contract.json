@@ -886,7 +886,7 @@
                   "codecId": "pg/vector@1",
                   "kind": "scalar",
                   "typeParams": {
-                    "length": 1536
+                    "length": 3072
                   }
                 }
               },
@@ -1863,7 +1863,7 @@
                   "codecId": "pg/vector@1",
                   "dataType": "pgvector/vector",
                   "nullable": true,
-                  "typeRef": "Embedding1536"
+                  "typeRef": "Embedding3072"
                 },
                 "embeddingDimensions": {
                   "codecId": "pg/int4@1",
@@ -2151,14 +2151,14 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "7779c20909cdd156723430544e0579482da247fc0ddfa9e24c0ef01ed9432083",
+    "storageHash": "5e25c732eefda8546f471de581bef58226b0f5e99d305b8524730dee3585861e",
     "types": {
-      "Embedding1536": {
+      "Embedding3072": {
         "codecId": "pg/vector@1",
         "dataType": "pgvector/vector",
         "kind": "codec-instance",
         "typeParams": {
-          "length": 1536
+          "length": 3072
         }
       }
     }

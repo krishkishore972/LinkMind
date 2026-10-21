@@ -1,7 +1,7 @@
 // use prisma-8
 
 types {
-  Embedding1536 = pgvector.Vector(1536)
+  Embedding3072 = pgvector.Vector(3072)
 }
 
 enum ResourceType {
@@ -97,7 +97,7 @@ model MemoryItem {
   provenance          ProvenanceStatus
   entities            Json?
   metadata            Json?
-  embedding           Embedding1536?
+  embedding           Embedding3072?
   embeddingModel      String?
   embeddingDimensions Int?
   createdAt           TimestamptzString   @default(now())

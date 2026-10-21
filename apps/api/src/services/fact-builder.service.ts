@@ -52,6 +52,7 @@ export class FactBuilder {
         const factCandidates = this.extractFacts(resource);
         resourcesProcessed++;
 
+        const memories = [];
         for (const candidate of factCandidates) {
           const factInput: FactMemoryInput = {
             resourceId: resource.id,
@@ -65,12 +66,18 @@ export class FactBuilder {
             object: candidate.object,
           };
 
-          const memory = await this.memoryRepository.createFact(factInput);
-          const embedding = await this.embeddingProvider.embedSingle(candidate.content);
-          await vectorRepository.saveEmbeddings([{ id: memory.id, embedding }]);
-
+          memories.push(await this.memoryRepository.createFact(factInput));
           factsCreated++;
-          // Note: embedding count tracked separately
+        }
+
+        for (let start = 0; start < memories.length; start += batchSize) {
+          const batch = memories.slice(start, start + batchSize);
+          const embeddings = await this.embeddingProvider.embed(batch.map((memory) => memory.content));
+          await vectorRepository.saveEmbeddings(batch.map((memory, index) => ({
+            id: memory.id,
+            embedding: embeddings[index]!,
+          })));
+          embeddingsCreated += batch.length;
         }
       } catch (error) {
         errors.push(`Resource ${resource.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);

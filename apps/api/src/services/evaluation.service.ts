@@ -55,7 +55,7 @@ export class EvaluationService {
     const retrievalBudget = config.retrievalBudget ?? 10;
     const configurations = config.configurations ?? ['E1', 'E2'];
     const embeddingModel = config.embeddingModel ?? 'fake-embedding-model';
-    const embeddingDimensions = config.embeddingDimensions ?? 1536;
+    const embeddingDimensions = config.embeddingDimensions ?? 3072;
     const embeddingLatencyIncluded = config.embeddingLatencyIncluded ?? false;
 
     const questions = await evaluationQuestionRepository.findAll(datasetVersion);

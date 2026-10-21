@@ -19,33 +19,56 @@ export class GeminiEmbeddingProvider implements EmbeddingProvider {
   public async embed(texts: readonly string[]): Promise<number[][]> {
     const allEmbeddings: number[][] = [];
 
-    for (const text of texts) {
-      const response = await this.client.models.embedContent({
-        model: this.model,
-        contents: text,
-      });
+    for (let start = 0; start < texts.length; start += 10) {
+      const batch = texts.slice(start, start + 10);
+      const response = await this.embedWithRetry(batch);
+      const embeddings = response.embeddings?.map((embedding) => embedding.values).filter(
+        (embedding): embedding is number[] => Array.isArray(embedding),
+      ) ?? [];
 
-      const embedding = response.embeddings?.[0]?.values;
-      if (!embedding) {
-        throw new Error('Gemini API returned no embedding');
+      if (embeddings.length !== batch.length) {
+        throw new Error(`Gemini API returned ${embeddings.length} embeddings for ${batch.length} inputs`);
       }
-      allEmbeddings.push(embedding);
+      allEmbeddings.push(...embeddings);
     }
 
     return allEmbeddings;
   }
 
   public async embedSingle(text: string): Promise<number[]> {
-    const response = await this.client.models.embedContent({
-      model: this.model,
-      contents: text,
-    });
+    const response = await this.embedWithRetry([text]);
 
     const embedding = response.embeddings?.[0]?.values;
     if (!embedding) {
       throw new Error('Gemini API returned no embedding');
     }
     return embedding;
+  }
+
+  private async embedWithRetry(texts: readonly string[]): Promise<Awaited<ReturnType<typeof this.client.models.embedContent>>> {
+    let delayMs = 1000;
+
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        return await this.client.models.embedContent({
+          model: this.model,
+          contents: texts.map((text) => ({
+            role: 'user',
+            parts: [{ text }],
+          })),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const retryable = /429|RESOURCE_EXHAUSTED|rate.?limit|quota/i.test(message);
+        if (!retryable || attempt === 3) {
+          throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        delayMs *= 2;
+      }
+    }
+
+    throw new Error('Gemini embedding request failed after retries');
   }
 }
 

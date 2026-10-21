@@ -49,13 +49,20 @@ export class SummaryBuilder {
         const summaries = this.generateSummaries(resource);
         resourcesProcessed++;
 
+        const memories = [];
         for (const summary of summaries) {
-          const memory = await this.memoryRepository.createSummary(summary);
+          memories.push(await this.memoryRepository.createSummary(summary));
           summariesCreated++;
+        }
 
-          const embedding = await this.embeddingProvider.embedSingle(summary.content);
-          await vectorRepository.saveEmbeddings([{ id: memory.id, embedding }]);
-          embeddingsCreated++;
+        for (let start = 0; start < memories.length; start += batchSize) {
+          const batch = memories.slice(start, start + batchSize);
+          const embeddings = await this.embeddingProvider.embed(batch.map((memory) => memory.content));
+          await vectorRepository.saveEmbeddings(batch.map((memory, index) => ({
+            id: memory.id,
+            embedding: embeddings[index]!,
+          })));
+          embeddingsCreated += batch.length;
         }
       } catch (error) {
         errors.push(`Resource ${resource.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
