@@ -25,7 +25,7 @@ export class VectorRetrievalServiceImpl implements VectorRetrievalService {
     }
 
     const memoryIds = similar.map((s) => s.memoryId);
-    const documents = await this.searchRepository.listRawDocumentsByIds(memoryIds);
+    const documents = await this.searchRepository.listRawDocumentsByIds(memoryIds, this.representation);
 
     const docMap = new Map(documents.map((d) => [d.memoryId, d]));
     const results: SearchResult[] = [];

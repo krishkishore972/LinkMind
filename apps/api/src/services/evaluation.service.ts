@@ -48,6 +48,7 @@ export class EvaluationService {
   public constructor(
     private readonly bm25Service: RetrievalService,
     private readonly vectorService: VectorRetrievalService | null,
+    private readonly summaryVectorService: VectorRetrievalService | null = null,
   ) {}
 
   public async runEvaluation(config: EvaluationConfig = {}): Promise<EvaluationRunResult> {
@@ -93,8 +94,10 @@ export class EvaluationService {
           } else if (configuration === 'E2' && this.vectorService) {
             const searchResults = await this.vectorService.search({ query: question.question, limit: retrievalBudget });
             results = [...searchResults];
+          } else if (configuration === 'E3' && this.summaryVectorService) {
+            const searchResults = await this.summaryVectorService.search({ query: question.question, limit: retrievalBudget });
+            results = [...searchResults];
           } else {
-            // E3, E4, E5 not implemented yet
             results = [];
           }
 

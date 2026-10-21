@@ -122,7 +122,7 @@ export function createApp(
   const embeddingBuilder = new EmbeddingBuilder(memoryRepository, embeddingProvider);
   const summaryBuilder = new SummaryBuilder(resourceService, memoryRepository, embeddingProvider);
   const factBuilder = new FactBuilder(resourceService, memoryRepository, embeddingProvider);
-  const evaluationService = new EvaluationService(retrievalService, vectorService);
+  const evaluationService = new EvaluationService(retrievalService, vectorService, summaryVectorService);
   const answerService = new AnswerSynthesisService(
     retrievalService,
     vectorService,

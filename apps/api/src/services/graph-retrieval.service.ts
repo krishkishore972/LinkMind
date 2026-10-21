@@ -38,7 +38,7 @@ export class GraphRetrievalServiceImpl {
     // For now, just return initial candidates ranked by score
 
     const memoryIds = Array.from(expandedCandidates.keys()).slice(0, limit);
-    const documents = await this.searchRepository.listRawDocumentsByIds(memoryIds);
+    const documents = await this.searchRepository.listRawDocumentsByIds(memoryIds, 'fact');
 
     const docMap = new Map(documents.map((d) => [d.memoryId, d]));
     const results: SearchResult[] = [];

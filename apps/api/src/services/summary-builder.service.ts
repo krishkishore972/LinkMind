@@ -49,11 +49,8 @@ export class SummaryBuilder {
         const summaries = this.generateSummaries(resource);
         resourcesProcessed++;
 
-        const memories = [];
-        for (const summary of summaries) {
-          memories.push(await this.memoryRepository.createSummary(summary));
-          summariesCreated++;
-        }
+        const memories = await this.memoryRepository.replaceSummaries(resource.id, summaries);
+        summariesCreated += memories.length;
 
         for (let start = 0; start < memories.length; start += batchSize) {
           const batch = memories.slice(start, start + batchSize);

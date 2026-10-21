@@ -4,7 +4,10 @@ import type { SearchDocument } from '../types/search.js';
 
 export interface MemorySearchRepository {
   listRawDocuments(): Promise<readonly SearchDocument[]>;
-  listRawDocumentsByIds(memoryIds: readonly string[]): Promise<readonly SearchDocument[]>;
+  listRawDocumentsByIds(
+    memoryIds: readonly string[],
+    representation?: 'raw' | 'summary' | 'fact',
+  ): Promise<readonly SearchDocument[]>;
 }
 
 export const memorySearchRepository: MemorySearchRepository = {
@@ -33,13 +36,16 @@ export const memorySearchRepository: MemorySearchRepository = {
     return documents;
   },
 
-  async listRawDocumentsByIds(memoryIds: readonly string[]): Promise<readonly SearchDocument[]> {
+  async listRawDocumentsByIds(
+    memoryIds: readonly string[],
+    representation: 'raw' | 'summary' | 'fact' = 'raw',
+  ): Promise<readonly SearchDocument[]> {
     if (memoryIds.length === 0) {
       return [];
     }
 
     const idSet = new Set(memoryIds);
-    const memories = await db.orm.public.MemoryItem.where({ representation: 'raw' }).all();
+    const memories = await db.orm.public.MemoryItem.where({ representation }).all();
     const filtered = memories.filter((m) => idSet.has(m.id));
 
     const documents: SearchDocument[] = [];
