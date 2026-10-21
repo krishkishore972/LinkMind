@@ -25,6 +25,8 @@ import { VectorRetrievalServiceImpl } from './services/vector-retrieval.service.
 import { SummaryBuilder } from './services/summary-builder.service.js';
 import { FactBuilder } from './services/fact-builder.service.js';
 import { GraphRetrievalServiceImpl } from './services/graph-retrieval.service.js';
+import { GraphBuilder } from './services/graph-builder.service.js';
+import { graphEdgeRepository } from './repositories/graph-edge.repository.js';
 import { AnswerSynthesisService } from './services/answer-synthesis.service.js';
 import {
   Bm25RetrievalService,
@@ -121,8 +123,9 @@ export function createApp(
   const graphRetrievalService = new GraphRetrievalServiceImpl(embeddingProvider, memorySearchRepository);
   const embeddingBuilder = new EmbeddingBuilder(memoryRepository, embeddingProvider);
   const summaryBuilder = new SummaryBuilder(resourceService, memoryRepository, embeddingProvider);
-  const factBuilder = new FactBuilder(resourceService, memoryRepository, embeddingProvider);
-  const evaluationService = new EvaluationService(retrievalService, vectorService, summaryVectorService);
+  const factBuilder = new FactBuilder(resourceService, memoryRepository, embeddingProvider, graphEdgeRepository);
+  const graphBuilder = new GraphBuilder(memoryRepository);
+  const evaluationService = new EvaluationService(retrievalService, vectorService, summaryVectorService, factVectorService, graphRetrievalService);
   const answerService = new AnswerSynthesisService(
     retrievalService,
     vectorService,
@@ -183,6 +186,17 @@ export function createApp(
       response.status(200).json({ result });
     } catch (error) {
       console.error('Fact build error:', error);
+      response.status(500).json({ error: 'internal_server_error' });
+    }
+  });
+
+  app.post('/api/graph/build', async (request: Request, response: Response) => {
+    try {
+      const { resourceIds } = request.body ?? {};
+      const result = await graphBuilder.build({ resourceIds });
+      response.status(200).json({ result });
+    } catch (error) {
+      console.error('Graph build error:', error);
       response.status(500).json({ error: 'internal_server_error' });
     }
   });

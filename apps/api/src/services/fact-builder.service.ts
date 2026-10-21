@@ -2,6 +2,7 @@ import type { MemoryRepository } from '../repositories/memory.repository.js';
 import type { ResourceService } from './resource.service.js';
 import type { EmbeddingProvider } from './embedding.provider.js';
 import { vectorRepository } from '../repositories/vector.repository.js';
+import { graphEdgeRepository, type GraphEdgeRepository } from '../repositories/graph-edge.repository.js';
 import type { MemoryItemRecord, FactMemoryInput } from '../types/memory.js';
 
 export interface FactBuilderOptions {
@@ -32,6 +33,7 @@ export class FactBuilder {
     private readonly resourceService: ResourceService,
     private readonly memoryRepository: MemoryRepository,
     private readonly embeddingProvider: EmbeddingProvider,
+    private readonly edgeRepository: GraphEdgeRepository = graphEdgeRepository,
   ) {}
 
   public async build(options: FactBuilderOptions = {}): Promise<FactBuilderResult> {
@@ -52,23 +54,22 @@ export class FactBuilder {
         const factCandidates = this.extractFacts(resource);
         resourcesProcessed++;
 
-        const memories = [];
-        for (const candidate of factCandidates) {
-          const factInput: FactMemoryInput = {
-            resourceId: resource.id,
-            content: candidate.content,
-            evidenceText: candidate.evidenceText,
-            evidenceStart: candidate.evidenceStart,
-            evidenceEnd: candidate.evidenceEnd,
-            entities: candidate.entities,
-            predicate: candidate.predicate,
-            subject: candidate.subject,
-            object: candidate.object,
-          };
+        const existingFacts = await this.memoryRepository.findByRepresentation('fact', [resource.id]);
+        await this.edgeRepository.deleteForMemoryIds(existingFacts.map((fact) => fact.id));
 
-          memories.push(await this.memoryRepository.createFact(factInput));
-          factsCreated++;
-        }
+        const factInputs: FactMemoryInput[] = factCandidates.map((candidate) => ({
+          resourceId: resource.id,
+          content: candidate.content,
+          evidenceText: candidate.evidenceText,
+          evidenceStart: candidate.evidenceStart,
+          evidenceEnd: candidate.evidenceEnd,
+          entities: candidate.entities,
+          predicate: candidate.predicate,
+          subject: candidate.subject,
+          object: candidate.object,
+        }));
+        const memories = await this.memoryRepository.replaceFacts(resource.id, factInputs);
+        factsCreated += memories.length;
 
         for (let start = 0; start < memories.length; start += batchSize) {
           const batch = memories.slice(start, start + batchSize);

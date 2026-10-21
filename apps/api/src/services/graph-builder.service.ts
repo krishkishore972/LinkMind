@@ -1,5 +1,5 @@
 import type { MemoryRepository } from '../repositories/memory.repository.js';
-import type { FactMemoryInput } from '../types/memory.js';
+import { graphEdgeRepository, type GraphEdgeRepository } from '../repositories/graph-edge.repository.js';
 
 export interface GraphEdgeInput {
   sourceMemoryId: string;
@@ -21,14 +21,28 @@ export interface GraphBuilderResult {
 }
 
 export class GraphBuilder {
-  public constructor(private readonly memoryRepository: MemoryRepository) {}
+  public constructor(
+    private readonly memoryRepository: MemoryRepository,
+    private readonly edgeRepository: GraphEdgeRepository = graphEdgeRepository,
+  ) {}
 
   public async build(options: GraphBuilderOptions = {}): Promise<GraphBuilderResult> {
     const errors: string[] = [];
     let edgesCreated = 0;
     let factsLinked = 0;
 
-    const factMemories = await this.memoryRepository.findByRepresentation('fact', options.resourceIds);
+    const allFactMemories = await this.memoryRepository.findByRepresentation('fact');
+    const selectedResourceIds = options.resourceIds ? new Set(options.resourceIds) : null;
+    const factMemories = selectedResourceIds
+      ? allFactMemories.filter((fact) => selectedResourceIds.has(fact.resourceId))
+      : allFactMemories;
+    const factIds = factMemories.map((fact) => fact.id);
+    await this.edgeRepository.deleteForMemoryIds(factIds);
+
+    // When rebuilding selected resources, compare their facts against every
+    // fact in the corpus so newly added resources can form cross-resource
+    // links. Unselected-to-unselected edges remain untouched.
+    const candidateFacts = selectedResourceIds ? allFactMemories : factMemories;
 
     // Build edges based on shared entities
     for (let i = 0; i < factMemories.length; i++) {
@@ -36,9 +50,10 @@ export class GraphBuilder {
       if (!factA) continue;
       const entitiesA = this.getEntities(factA);
 
-      for (let j = i + 1; j < factMemories.length; j++) {
-        const factB = factMemories[j];
+      for (const factB of candidateFacts) {
         if (!factB) continue;
+        if (factA.id === factB.id) continue;
+        if ((!selectedResourceIds || selectedResourceIds.has(factB.resourceId)) && factB.id <= factA.id) continue;
         const entitiesB = this.getEntities(factB);
 
         // Same entity - strong link
@@ -67,8 +82,14 @@ export class GraphBuilder {
     confidence: number,
     evidenceText: string,
   ): Promise<void> {
-    // This would use a GraphEdgeRepository - for now we'll skip actual DB insert
-    // In a full implementation, this would call graphEdgeRepository.create({...})
+    await this.edgeRepository.createIfMissing({
+      sourceMemoryId: sourceId,
+      targetMemoryId: targetId,
+      relation,
+      confidence,
+      evidenceText,
+      provenance: 'generated',
+    });
   }
 
   private getEntities(memory: { metadata?: unknown }): string[] {
