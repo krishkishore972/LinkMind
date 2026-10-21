@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.memory_items.chunkIndex",
+    "label": "Add column \"chunkIndex\" to \"memory_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "chunkIndex",
+        "table": "memory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"chunkIndex\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "memory_items",
+          "chunkIndex"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"chunkIndex\"",
+        "sql": "ALTER TABLE \"public\".\"memory_items\" ADD COLUMN \"chunkIndex\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"chunkIndex\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "memory_items",
+          "chunkIndex"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.memory_items.memory_items_resourceId_representation_chunkIndex_key",
+    "label": "Add unique constraint on \"memory_items\" (resourceId, representation, chunkIndex)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "memory_items_resourceId_representation_chunkIndex_key",
+        "table": "memory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"memory_items_resourceId_representation_chunkIndex_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_items_resourceId_representation_chunkIndex_key",
+          "public",
+          "\"public\".\"memory_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"memory_items_resourceId_representation_chunkIndex_key\"",
+        "sql": "ALTER TABLE \"public\".\"memory_items\" ADD CONSTRAINT \"memory_items_resourceId_representation_chunkIndex_key\" UNIQUE (\"resourceId\", \"representation\", \"chunkIndex\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"memory_items_resourceId_representation_chunkIndex_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "memory_items_resourceId_representation_chunkIndex_key",
+          "public",
+          "\"public\".\"memory_items\""
+        ]
+      }
+    ]
+  }
+]
